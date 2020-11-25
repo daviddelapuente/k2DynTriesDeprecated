@@ -27,3 +27,29 @@ the program is right if you see something like this printed in the comand line:
 3000000
 
 ...
+
+## 2) how to create your own graph
+
+1) create a file with any name, for example exampleGraph.txt
+
+2) in the first line write 3 numbers: numberOfRows, numberOfCols, numberOfEdges
+
+3) then write numberOfEdges lines with a string of length 23.
+This string should only have the cars '0', '1', '2', '3'. This string represent
+an edge in the morton code.
+
+4) an example of the file could be:
+
+7414866 7414866 5
+
+10000100003000002320000
+
+11000000000320000002000
+
+12321321321321000000000
+
+01000003210000000000000
+
+00222000030011110000000
+
+and this represent a graph of 7414866 nodes and 5 edges.
