@@ -9,12 +9,13 @@ have a test graph (again, see section 2 to create one).
 
 1.2) compile the program in the comand line:
 
-    g++ treeBlock.c -o treeBlock -O9
+    g++ bigTest1.c -o bigTest1 -O9
+
 probably you will see some warnings
 
 1.3) test the treeBlock in the comand line:
 
-    ./treeBlock < indochina-2004.Zorder
+    ./bigTest1 < indochina-2004.Zorder
     
 the program is right if you see something like this printed in the comand line:
 

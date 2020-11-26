@@ -1,6 +1,7 @@
 #ifndef TREEBLOCK
 #define TREEBLOCK
 
+//some libraries
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,29 +10,38 @@
 #include <stdint.h>
 #include <time.h>
 
+//the name space
 using namespace std;
 
+// Global table that stores the sizes of the blocks, used for growing them
+uint16_t *sizeArray; // array of sizes
 
-// A node within a block represented as a pair <index of the short int that contains the node, offset of the node within the short int>. The offset is 0, 1, 2, or 3
+// Minimum and maximum block sizes
+uint16_t N1;
+uint16_t Nt;
 
-#define NODE_TYPE uint16_t
-#define OFFSET_TYPE uint8_t
-#define MAX_UINT_16 65535
-
-  // Global table that stores the sizes of the blocks, used for growing them
-  uint16_t *sizeArray; // array of sizes
-
-  // Minimum and maximum block sizes
-  uint16_t N1;
-  uint16_t Nt;
-
-#define S1 64
-#define S2 128
-#define S3 1024
+//L1 and L2 are leves from where the tree change it forms.
+//the nodes in the leves [0,L1) are trieNodes.
+//nodes in [L1,l2] are TreeBlocks of a medium size
+//nodes in (L2.maxint) are TreeBlocks of a larger size
+//we make this, because we need to hava some equilibrium, the first nodes are not compress because
+//the are accesed very often. And for the treeBlocks we have two diferent max sizes because the medium
+//node are accessed more frequently and rank the child isnt cheap.
 #define L1 8
 #define L2 16
 
+//these are the sizes for the diferent type of blocks
+//S1 = for nodes in [0,L1)
+//S2 = for nodes in [L1,L2]
+//S3 = for nodes in (L2,maxint]
+#define S1 64
+#define S2 128
+#define S3 1024
 
+
+//this is a recursive data structure. the trieNode has 4 childrens that are accesed using the morton code
+//from the level [0,L1) the block is a null pointer (cuz the data structure is not compressed)
+//for leves in [L1,maxint), block is a pointer to a treeBlock (the block data structure)
 struct trieNode
  {
     void *block;
@@ -39,50 +49,58 @@ struct trieNode
  };
 
 
+// position in the dfuds
+#define NODE_TYPE uint16_t
+// any postition in the dfuds, contains an uint16_t, that represent 4 nodes of 4 bits. the OFFSET_TYPE, represent wich of the 4 bits represent the node
+#define OFFSET_TYPE uint8_t
+//max unsigned int of 16 bits, is used to limit the dfuds
+#define MAX_UINT_16 65535
+
+//A node within a block represented as a pair <index of the short int that contains the node, offset of the node within the short int>. The offset is 0, 1, 2, or 3
 typedef std::pair <NODE_TYPE,OFFSET_TYPE> treeNode;
 
+//function that returns the the absolute position of a node in the block.
+//this absolute position is calculated first geting the NODE_TYPE, and then we have 4 consecutives posibilities
+//and we use the OFFSET_TYPE to choose one.
 uint16_t absolutePosition(treeNode &node);
 
+
+
+
+//this is the main structure. the more important attributes are:
+//dfuds: is the bit array containing the topology
+//ptr: is the array of pointers to the child blocks (the frontier)
+//todo: maybe are more important attributes and methods
 struct treeBlock
  {
-    uint8_t rootDepth;  // depth of the root of the block    
-    
+    //attributes
+    uint8_t rootDepth;  // depth of the root of the block
     uint16_t nNodes;  // number of nodes in the tree block
-    
-    uint16_t maxNodes; // maximum number of nodes in the block.
-                       // Also, it is the size of the next array.
-    
+    uint16_t maxNodes; // maximum number of nodes in the block. Also, it is the size of the next array.
     uint16_t *dfuds;  // DFUDS of the tree block
-    
-    void /*blockPTR*/ *ptr;    // Pointers to child blocks 
-    
+    void /*blockPTR*/ *ptr;    // Pointers to child blocks (this is a pointer to a data structure containing the pointer to the block (please read  blockPtr below))
     uint16_t nPtrs;   // number of pointers to child blocks
- 
- 
-    void insert(treeNode, uint8_t[], uint64_t, uint16_t, uint64_t, uint16_t);
-    
-    treeNode skipChildrenSubtree(treeNode &, uint8_t, uint16_t &, uint16_t, uint16_t &);
-    
-    treeNode child(treeBlock *&, treeNode &, uint8_t, uint16_t &, uint16_t, uint16_t &);
-    
-    void grow(uint16_t extraNodes);
-    
-    void shrink(uint16_t deletedNodes);
-    
-    treeNode selectSubtree(uint16_t maxDepth, uint16_t & subTreeSize, uint16_t & depthSelectN);
 
+    //methods
+    //todo: simple explain the methods
+    void insert(treeNode, uint8_t[], uint64_t, uint16_t, uint64_t, uint16_t);
+    treeNode skipChildrenSubtree(treeNode &, uint8_t, uint16_t &, uint16_t, uint16_t &);
+    treeNode child(treeBlock *&, treeNode &, uint8_t, uint16_t &, uint16_t, uint16_t &);
+    void grow(uint16_t extraNodes);
+    void shrink(uint16_t deletedNodes);
+    treeNode selectSubtree(uint16_t maxDepth, uint16_t & subTreeSize, uint16_t & depthSelectN);
     treeNode selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, uint16_t & depthSelectN);
-        
     struct treeBlock *getPointer(uint16_t);
-    
     uint64_t size();
 
-    void freeTreeBlock();   
-    
+    //free the data structure
+    void freeTreeBlock();
     ~treeBlock(){;};
  };
  
- 
+//this is a wrapper that contain the treeBlock pointer, but also contain a flag.
+//this flag is the pre order of the node in the block.
+//todo: maybe you want to write something more about this data structure
 typedef struct
  {
     uint16_t flag;   // node that owns the pointer to child block
@@ -91,7 +109,61 @@ typedef struct
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* Auxiliary tables */
+
+/* this table is used to right Shitf >> bits for the OFFSET_TYPE
+for example if you have this node with its 4 childs
+0000 1111 0000 0000
+you want to shift 8 times to the left (shiftT[1]) to recover the node
+0000 0000 0000 1111 */
+const uint16_t shiftT[4] = {12,8,4,0};
+
+/*initial mask to obtain the binary code of a node according to its offset within a short int
+ for example if you have a node 11001010100001101 and you want the fourth children, you want
+ maskInitT[3]=0000000000001111*/
+const uint16_t maskInitT[4] = {0xf000,0x0f00,0x00f0,0x000f};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//todo: ver que hace el resto de las tablas
+
+
+
+
+
+
 
 /* Table used for insertion. Represents the DFUDS patterns using nibbles
 within a byte*/
@@ -122,14 +194,12 @@ const int8_t childT[16][4] = {
 };
 
 
-/*initial mask to obtain the binary code of a node according to its offset within a short int*/
-const uint16_t maskInitT[4] = {0xf000,0x0f00,0x00f0,0x000f};
+
 
 const uint8_t firstChildT[16] = {(uint8_t)-1,1,2,1,3,1,2,1,4,1,2,1,3,1,2,1};
 
 const uint8_t nChildrenT[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 
-const uint16_t shiftT[4] = {12,8,4,0};
 
 // Given the code of a node and a symbol to insert, gives the insertion rank of the symbol
 
