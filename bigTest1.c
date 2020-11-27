@@ -19,6 +19,9 @@ int main()
     t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
     t->block = NULL;
 
+    //scan int code
+    int scanCode;
+
 
 
     /*int this part we create the array that contains the sizes a block can have.
@@ -49,10 +52,10 @@ int main()
     //init a clock
     clock_t start, diff=0;
     //we read the first line of the input (wich contains the number of: rows,cols,edges)
-    scanf("%lu %lu %lu\n", &n, &n1, &nEdges);
+    scanCode=scanf("%lu %lu %lu\n", &n, &n1, &nEdges);
     for (uint64_t i = 0; i < nEdges; ++i) {
         //we read the line containing the edge
-        scanf("%s\n", str);
+        scanCode=scanf("%s\n", str);
         //todo: podemos cambiar el 23 por length thel string en el futuro.
         //for each char of the string, we need to convert it to int.
         //todo: podemos usar atoi y ahorrarnos el switch
@@ -91,27 +94,16 @@ int main()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-    bool found = false;
-
+    //in this part we are going to test the searching of edges
+    //re read the graph file
     fseek(stdin,0,SEEK_SET);
-
-    scanf("%lu %lu %lu\n", &n, &n1, &nEdges);
-
+    scanCode=scanf("%lu %lu %lu\n", &n, &n1, &nEdges);
+    //diff to compute the time, found to know if an edge was found
     diff = 0;
-
+    bool found = false;
+    //we will test the first 100000000 edges in the file
     for (uint64_t i = 0; i < 100000000/*nEdges*/; ++i) {
-        scanf("%s\n", str);
+        scanCode=scanf("%s\n", str);
         for (uint8_t j = 0; j < 23; ++j)
             switch(str[j]) {
                 case '0': str[j] = 0;
@@ -123,75 +115,44 @@ int main()
                 case '3': str[j] = 3;
                     break;
             }
-
+        //each 1000000 print an edge
         if (i%1000000 == 0) { printf("%lu %lu\n", i, count); fflush(stdout);}
-
         start = clock();
-
+        //return tre if the edge is in the tree. t=trie pointer, str=morton code, 23=length of the morton code, 22=max level
         found = isEdgeTrie(t, str, 23, 22);//isEdge(&B, str, 23, 22);
-
         diff += clock() - start;
         if (found) count++;
     }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // Ahora genero arcos que no necesariamente están en el grafo y los busco
-
+    // now we create an edge that not necesary is in the graph, and search it.
     str[0] = str[1] = str[2] = str[3] = str[4] = str[5] = str[6] = str[7] = str[8] = str[9] = str[10] = str[11] = 0;
     str[12] = str[13] = str[14] = str[15] = str[16] = str[17] = str[18] = str[19] = str[20] = str[21] = str[22] = 0;
-
-
+    //some variables that we are going to use to iter
     uint8_t j;
-
     uint64_t i;
-
+    //todo: quizas este codigo esta duplicado
     for (i = 0; i < 100000000; i++) {
-
+        //todo: que hace esto?
         for (j = 22; j >= 0; j--) {
             if (str[j] != 3) break;
             str[j] = 0;
         }
-
+        //todo: que hace esto?
         str[j]++;
-
+        //each 1000000 print an edge
         if (i%1000000 == 0) {printf("%lu %lu\n", i, count); fflush(stdout);}
-
         start = clock();
-
+        //return tre if the edge is in the tree. t=trie pointer, str=morton code, 23=length of the morton code, 22=max level
         found = isEdgeTrie(t, str, 23, 22); //isEdge(&B, str, 23, 22);
-
         diff += clock() - start;
-
         if (found) count++;
-
     }
-
+    //print the results
     msec = diff * 1000 / CLOCKS_PER_SEC;
-
     printf("Search time: %f microseconds per query\n", (float)msec*1000/200000000);
-
     printf("Number of edges found: %lu\n", count);
-
     return 0;
 }
 
