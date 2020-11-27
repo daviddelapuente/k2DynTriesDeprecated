@@ -17,18 +17,15 @@ inline void nextNode(treeNode &node){
     node.first += !node.second;
 }
 
-
-inline void prevNode(treeNode &node)
- {
-/*     if (!node.second) {
-        node.second = 3;
-        --node.first;
-     }
-     else --node.second;*/
-     
-     node.first -= !node.second;
-     node.second = (node.second-1) & 0x3;
- }
+/*give the previous node in the dfuds.
+for example, if your node is <1,0> it absolute position will be 4
+then the next node will be <0,3> because it absolute position will be 3*/
+inline void prevNode(treeNode &node){
+    //only subtract 1 if node.second=0
+    node.first -= !node.second;
+    //this is like (second-1)%4
+    node.second = (node.second-1) & 0x3;
+}
 
 
 

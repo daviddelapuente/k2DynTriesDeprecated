@@ -83,9 +83,27 @@ void testNextNode(){
 
 }
 
+void testPrevNode(){
+    treeNode tn;
+    tn.first=1;
+    tn.second=1;
+    assert(absolutePosition(tn)==5);
+    prevNode(tn);
+    assert(absolutePosition(tn)==4);
+    prevNode(tn);
+    assert(absolutePosition(tn)==3);
+    prevNode(tn);
+    assert(absolutePosition(tn)==2);
+    prevNode(tn);
+    assert(absolutePosition(tn)==1);
+    prevNode(tn);
+    assert(absolutePosition(tn)==0);
+}
+
 void testTreeNode(){
     testAbsolutePosition();
     testNextNode();
+    testPrevNode();
 }
 
 int main(){
