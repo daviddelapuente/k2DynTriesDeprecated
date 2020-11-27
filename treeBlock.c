@@ -1,24 +1,21 @@
-
 #include "treeBlock.h"
 
-// Transforma un nodo en su representación de par, a un nodo en representacion absoluta en la secuencia DFUDS
-
-uint16_t absolutePosition(treeNode &node)
- {
+// Transform a node from it pair <NODE_TYPE,OFFSET_TYPE> to it absolute representation (position) in DFUDS
+uint16_t absolutePosition(treeNode &node){
     return 4*node.first + node.second;
- }
+}
 
 
-inline void nextNode(treeNode &node)
- {
-     /*node.second = (node.second+1) % 4;
-     if (!node.second) node.first++;*/     
-     
-     node.second = (node.second+1) & 0x3;
-     node.first += !node.second;
-     
-     
- }
+//todo: por que inline?
+/*give the next node in the dfuds.
+for example, if your node is <1,1> it absolute position will be 5
+then the next node will be <1,2> because it absolute position will be 6*/
+inline void nextNode(treeNode &node){
+    //this is like (second+1)%4
+    node.second = (node.second+1) & 0x3;
+    //this sum 1 <=> node.second=0, and will sum 0 in an ohter case
+    node.first += !node.second;
+}
 
 
 inline void prevNode(treeNode &node)
@@ -32,6 +29,27 @@ inline void prevNode(treeNode &node)
      node.first -= !node.second;
      node.second = (node.second-1) & 0x3;
  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -87,6 +105,46 @@ struct subtreeInfo
         subtreeSize = _subtreeSize;
      };
  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 int8_t stack[100];

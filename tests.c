@@ -2,7 +2,6 @@
 #include "assert.h"
 
 void testShiftTTable(){
-    printf("Begin testShiftTTable Tables\n");
     assert(shiftT[0]==12);
     assert(shiftT[1]==8);
     assert(shiftT[2]==4);
@@ -18,12 +17,9 @@ void testShiftTTable(){
     //0000000000001111
     assert(a>>shiftT[1]==15);
 
-    printf("end testShiftTTable Tables\n");
 }
 
 void testMaskInitT(){
-    printf("Begin testMaskInitT Tables\n");
-
     assert(maskInitT[0]==0xf000);
     assert(maskInitT[1]==0x0f00);
     assert(maskInitT[2]==0x00f0);
@@ -41,18 +37,60 @@ void testMaskInitT(){
     //0000000000000010
     assert((a & maskInitT[3])==2);
 
-    printf("end testMaskInitT Tables\n");
 }
 
 //this test is used to test if the tables are right
 void testTables(){
-    printf("Begin testTables Tables\n");
     testShiftTTable();
     testMaskInitT();
-    printf("end testTables Tables\n");
+}
+
+void testAbsolutePosition(){
+    treeNode tn;
+    tn.first=0;
+    tn.second=0;
+    assert(absolutePosition(tn)==0);
+    tn.first=1;
+    tn.second=2;
+    assert(absolutePosition(tn)==6);
+}
+
+void testNextNode(){
+    treeNode tn;
+    tn.first=1;
+    tn.second=1;
+    assert(absolutePosition(tn)==5);
+    nextNode(tn);
+    assert(absolutePosition(tn)==6);
+    nextNode(tn);
+    assert(absolutePosition(tn)==7);
+    nextNode(tn);
+    assert(absolutePosition(tn)==8);
+    nextNode(tn);
+    assert(absolutePosition(tn)==9);
+    nextNode(tn);
+    assert(absolutePosition(tn)==10);
+
+    //checking the second line of the function
+    tn.second=0;
+    assert(!tn.second==1);
+    tn.second=1;
+    assert(!tn.second==0);
+    tn.second=2;
+    assert(!tn.second==0);
+    tn.second=3;
+    assert(!tn.second==0);
+
+}
+
+void testTreeNode(){
+    testAbsolutePosition();
+    testNextNode();
 }
 
 int main(){
     testTables();
+    testTreeNode();
+    printf("congratulations, all test passed\n");
     return 0;
 }
