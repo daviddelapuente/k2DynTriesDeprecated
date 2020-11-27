@@ -27,6 +27,37 @@ inline void prevNode(treeNode &node){
     node.second = (node.second-1) & 0x3;
 }
 
+//todo: crear tests de esta estrucutura cuando sepas lo que hace
+//struct to retreive some data of the nodes
+struct nodeInfo{
+    //preorder: give the preorder of the node in the topology
+    uint16_t preorder;
+    //give the number of children the node have from 1 to 4
+    uint16_t nChildren;
+    //constructors
+    nodeInfo() {};
+    nodeInfo(uint16_t _preorder, uint16_t _nChildren){
+        preorder = _preorder;
+        nChildren = _nChildren;
+    };
+};
+
+//todo: crear tests de esta estructura cuando sepas lo que hace
+//struct to rereive some data of the subtrees of a node
+struct subtreeInfo{
+    //the preorder of a subtree
+    uint16_t preorder;
+    //the size of the subtree
+    uint16_t subtreeSize;
+    //constructors
+    subtreeInfo() {};
+    subtreeInfo(uint16_t _preorder, uint16_t _subtreeSize){
+        preorder = _preorder;
+        subtreeSize = _subtreeSize;
+    };
+};
+
+
 
 
 
@@ -78,30 +109,6 @@ void treeBlock::shrink(uint16_t deletedNodes)
     maxNodes = 4*((sizeArray[nNodes-deletedNodes]+3)/4); 
  }
 
-
-struct nodeInfo 
- {
-    uint16_t preorder;
-    uint16_t nChildren;
-    nodeInfo() {};
-    nodeInfo(uint16_t _preorder, uint16_t _nChildren) 
-     {
-        preorder = _preorder; 
-        nChildren = _nChildren;
-     };
- };
-
-struct subtreeInfo 
- {
-    uint16_t preorder;
-    uint16_t subtreeSize;
-    subtreeInfo() {};
-    subtreeInfo(uint16_t _preorder, uint16_t _subtreeSize) 
-     {
-        preorder = _preorder;
-        subtreeSize = _subtreeSize;
-     };
- };
 
 
 
