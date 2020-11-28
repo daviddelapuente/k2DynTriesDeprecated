@@ -1,6 +1,9 @@
 #include "treeBlock.c"
 #include "assert.h"
 
+void pf(uint16_t u){
+    printf("%u\n",u);
+}
 void testShiftTTable(){
     assert(shiftT[0]==12);
     assert(shiftT[1]==8);
@@ -106,9 +109,75 @@ void testTreeNode(){
     testPrevNode();
 }
 
+void testTreeBlockGrow(){
+    //first we create an array of sizes
+    double alpha = 0.99;
+    N1 = 4;
+    Nt = S3;
+    sizeArray = (uint16_t *) malloc(sizeof(uint16_t)*(Nt+1));
+    for (int i = 0; i <= Nt; ++i) {
+        if (i > N1) N1 = 4*(((uint16_t)ceil((double)N1/alpha)+3)/4);
+        sizeArray[i] = N1;
+    }
+
+    for(uint16_t i=12;i<100;i++){
+        for(uint16_t j=1;j<100;j++){
+            //we create the block
+            treeBlock *block = (treeBlock *)malloc(sizeof(treeBlock));
+
+            //instantiate the max nodes and the defuds
+            block->maxNodes = sizeArray[i];
+            block->dfuds = (uint16_t *)calloc((sizeArray[i]+4-1)/4, sizeof(uint16_t));
+            block->nNodes=block->maxNodes;
+
+            //grow by j
+            block->grow(j);
+
+            //the assert is withsizeArray[sizeArray[i]+j] because sizeArray[i] is the max nodes beforw adding j
+            assert(block->maxNodes==sizeArray[sizeArray[i]+j]);
+        }
+    }
+}
+
+void testTreeBlockShrink(){
+    //first we create an array of sizes
+    double alpha = 0.99;
+    N1 = 4;
+    Nt = S3;
+    sizeArray = (uint16_t *) malloc(sizeof(uint16_t)*(Nt+1));
+    for (int i = 0; i <= Nt; ++i) {
+        if (i > N1) N1 = 4*(((uint16_t)ceil((double)N1/alpha)+3)/4);
+        sizeArray[i] = N1;
+    }
+
+    for(uint16_t i=20;i<100;i++){
+        for(uint16_t j=1;j<i;j++){
+            //we create the block
+            treeBlock *block = (treeBlock *)malloc(sizeof(treeBlock));
+
+            //instantiate the max nodes and the defuds
+            block->maxNodes = sizeArray[i];
+            block->dfuds = (uint16_t *)calloc((sizeArray[i]+4-1)/4, sizeof(uint16_t));
+            block->nNodes=block->maxNodes;
+
+            //grow by j
+            block->shrink(j);
+
+            //the assert is withsizeArray[sizeArray[i]-j] because sizeArray[i] is the max nodes before removing j
+            assert(block->maxNodes==sizeArray[sizeArray[i]-j]);
+        }
+    }
+}
+
+void testTreeBlock(){
+    testTreeBlockGrow();
+    testTreeBlockShrink();
+}
+
 int main(){
     testTables();
     testTreeNode();
+    testTreeBlock();
     printf("congratulations, all test passed\n");
     return 0;
 }

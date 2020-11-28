@@ -32,7 +32,10 @@ int main()
     N1 = 4;
     //max size a block can have (the max number of nodes a block can have is nt) we can test with: 96, 128, 256, 512, 1024
     Nt = S3;
-    //the array of sizes is of length Nt+1
+    /*the array of sizes is of length Nt+1
+    the idea is to acces sizeArray[i] where i is the actual number of nothes
+    and the array will return the size the block should have
+    so is probably that sizeArray[i]=sizeArray[i+1]*/
     sizeArray = (uint16_t *) malloc(sizeof(uint16_t)*(Nt+1));
     //for each espace in the array
     for (int i = 0; i <= Nt; ++i) {

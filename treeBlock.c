@@ -5,7 +5,6 @@ uint16_t absolutePosition(treeNode &node){
     return 4*node.first + node.second;
 }
 
-
 //todo: por que inline?
 /*give the next node in the dfuds.
 for example, if your node is <1,1> it absolute position will be 5
@@ -61,53 +60,39 @@ struct subtreeInfo{
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void treeBlock::freeTreeBlock() 
- {
+/*Is important to free the memory.
+This is a recursive function. first we free the dfuds.
+and then recursively we free the children blocks, finally
+we free the array with the children pointers and this*/
+//todo: testear esto
+void treeBlock::freeTreeBlock(){
     free((void *)dfuds);
-    for (uint16_t i = 0; i < nPtrs; ++i)
-       ((blockPtr *)ptr)[i].P->freeTreeBlock();
-    
+    for (uint16_t i = 0; i < nPtrs; ++i){
+        ((blockPtr *) ptr)[i].P->freeTreeBlock();
+    }
     free((void*)ptr);
-    free(this); 
- }
+    free(this);
+}
 
+/*this method, realloc dfuds in a bigger array
+the idea is that the new size of the block should be sizeArray[nNodes+extraNodes]
+remember that sizeArray is an array of max sizes per blocks.*/
+//todo: testear esto, pq ese + 3 / 4?
+void treeBlock::grow(uint16_t extraNodes){
+     dfuds = (uint16_t *) realloc(dfuds, sizeof(uint16_t)*((sizeArray[nNodes+extraNodes] + 3)/4));
+     //the new max is sizeArray[nNodes+extraNodes]
+     maxNodes = 4*((sizeArray[nNodes+extraNodes]+3)/4);
+}
 
-
-
-void treeBlock::grow(uint16_t extraNodes)
- {
-    //if ((sizeArray[nNodes+extraNodes] + 3)/4 > (maxNodes + 3)/4)    
-       dfuds = (uint16_t *) realloc(dfuds, sizeof(uint16_t)*((sizeArray[nNodes+extraNodes] + 3)/4));
-    maxNodes = 4*((sizeArray[nNodes+extraNodes]+3)/4);
- }
-
-
-void treeBlock::shrink(uint16_t deletedNodes)
- {
-    //if ((sizeArray[nNodes-deletedNodes] + 3)/4 < (maxNodes + 3)/4)
-       dfuds = (uint16_t *) realloc(dfuds, sizeof(uint16_t)*((sizeArray[nNodes-deletedNodes] + 3)/4));
-    maxNodes = 4*((sizeArray[nNodes-deletedNodes]+3)/4); 
- }
+/*this method, realloc dfuds in a smaller array
+the idea is that the new size of the block should be sizeArray[nNodes-extraNodes]
+remember that sizeArray is an array of max sizes per blocks.*/
+//todo: testear esto, pq ese + 3/4?
+void treeBlock::shrink(uint16_t deletedNodes){
+    dfuds = (uint16_t *) realloc(dfuds, sizeof(uint16_t)*((sizeArray[nNodes-deletedNodes] + 3)/4));
+    //the new max is sizeArray[nNodes+extraNodes]
+    maxNodes = 4*((sizeArray[nNodes-deletedNodes]+3)/4);
+}
 
 
 
@@ -527,9 +512,9 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
              
              register uint64_t aux = 4*(3-selectedNode.second);             
              
-             new_dfuds[destNode.first] = new_dfuds[destNode.first] 
+             new_dfuds[destNode.first] = new_dfuds[destNode.first]
                                        | (((dfuds[selectedNode.first] >> aux/*4*(3-selectedNode.second)*/)
-                                       & 0x000F) << 4*(3-destNode.second));  
+                                       & 0x000F) << 4*(3-destNode.second));
 
              if (selectedNode != originalSelectedNode)                 
                 dfuds[selectedNode.first] =  dfuds[selectedNode.first]
@@ -552,7 +537,7 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
           
           new_block->nNodes = subTreeSize;
           new_block->maxNodes = sizeArray[subTreeSize]; // OJO con este valor, definir bien
-          new_block->dfuds = new_dfuds; 
+          new_block->dfuds = new_dfuds;
           new_block->rootDepth = depthSelectedNode;
           
           if (auxFlag == 0) {
