@@ -98,127 +98,136 @@ void treeBlock::shrink(uint16_t deletedNodes){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//todo: ver que hacen estos
-int8_t stack[100];
+//todo: ver si el 4096 se puede generalizar
+//all of these sizes are 4096, becouse are the maximum number of subtrees a block can have
+//array of subtree info
 nodeInfo stackSS[4096];
+//this array contains all the subtrees
 subtreeInfo subtrees[4096];
+//array of deepth of every subtree
 uint16_t depthVector[4096];
 
 //todo: elimine selectSubtree
 
 treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, uint16_t & depthSelectN){
 
-    treeNode node(0,0); // initialized as the root of the block
-    uint16_t depth;// depth is the depth of the root of the block
+    // depth is the depth of the root of the block
+    uint16_t depth= rootDepth + 1;
+
+    //curFlago=0 means that we are in the first fronteir node
     uint16_t curFlag = 0;
-    uint16_t ssTop=0, subtreeTop = 0, depthTop = 0;
-    uint8_t cNodeCod = (*dfuds>>12) & 0x000f;
-    stackSS[ssTop].preorder = 0; stackSS[ssTop++].nChildren =  nChildrenT[cNodeCod];
-    nextNode(node);
-    depth = rootDepth + 1;
+    //initialize a nextFlag
     int32_t nextFlag;
 
+    //current node codification
+    uint8_t cNodeCod = (*dfuds>>12) & 0x000f;
+
+    //init the index of the 3 arrays (stackSS,subtrees,depthVector)
+    uint16_t ssTop=0, subtreeTop = 0, depthTop = 0;
+    //the first node preorder is 0 and the number of children is a number between 0 and 4 and is given by the table nChildernT and de cNodeCod codification
+    stackSS[ssTop].preorder = 0;
+    stackSS[ssTop++].nChildren =  nChildrenT[cNodeCod];
+
+    //this will keep a finger on the frontier
     if (nPtrs == 0 || curFlag >= nPtrs){
+        //there arent more flags (fronteir nodes), we set the nextFlago to -1 to distinguish it
         nextFlag = -1;
     }else{
+        //we continue with the next flag (this is the current flag in our ptr array)
         nextFlag = ((blockPtr *)ptr)[curFlag].flag;
     }
 
+    //we iter for each node in the block to calculeta the subtrees sizes
     for (uint16_t i=1; i < nNodes; ++i) {
-       if (i == nextFlag) {
-           ++curFlag;
-           if (nPtrs == 0 || curFlag >= nPtrs){
-               nextFlag = -1;
-           }else{
-               nextFlag = ((blockPtr *)ptr)[curFlag].flag;
-           }
+        //if we are in a frontier
+        if (i == nextFlag) {
 
-           --stackSS[ssTop-1].nChildren;
+            //go to the next fronteir node
+            ++curFlag;
+            //if we run out of fronteir nodes, we set nextFlag to -1 to distinguis it
+            if (nPtrs == 0 || curFlag >= nPtrs){
+                nextFlag = -1;
+            }else{
+                //we continue with the next fronteir node
+                nextFlag = ((blockPtr *)ptr)[curFlag].flag;
+            }
 
-       }else if (depth < maxDepth) {
+            //substract 1 from the childrens that are not visited yet in the node (this is stackSS[sstop-1])
+            --stackSS[ssTop-1].nChildren;
 
-          stackSS[ssTop].preorder = i; 
-          cNodeCod = (dfuds[i>>2]>>shiftT[i & 0x3]) & 0x000f;         
-          stackSS[ssTop++].nChildren = nChildrenT[cNodeCod];          
-          depth++;
+        //if we are not a fronteir node (and still we dont pass the max Depth)
+        }else if (depth < maxDepth) {
+            //in this part we fill the nodeInfo i
+            //fill the preorder of the nodeInfo
+            stackSS[ssTop].preorder = i;
+            //get the node code
+            cNodeCod = (dfuds[i>>2]>>shiftT[i & 0x3]) & 0x000f;
+            //fill the childrens of the node info, and then sstop++
+            stackSS[ssTop++].nChildren = nChildrenT[cNodeCod];
+            depth++;
+        }else {
+            //we only actualize that we visited this node and continue with the next
+            --stackSS[ssTop-1].nChildren;
+        }
 
-       }else {
-           --stackSS[ssTop-1].nChildren;
-       }
-
-       while (ssTop > 0 && stackSS[ssTop-1].nChildren == 0) {
-
-           subtrees[subtreeTop].preorder = stackSS[ssTop-1].preorder;
-           subtrees[subtreeTop++].subtreeSize = i-stackSS[ssTop-1].preorder+1;
-           --ssTop;
-           depthVector[depthTop++] = --depth;
-
-           if (ssTop == 0) {
-               break;
-           }else {
-               stackSS[ssTop-1].nChildren--;
-           }
-
-       }
-
+        //now we fill the subtrees info
+        //this ssTop~i so this is O(n^2)
+        //todo: necesito mas orientacion de como se hace esto :(
+        while (ssTop > 0 && stackSS[ssTop-1].nChildren == 0) {
+            subtrees[subtreeTop].preorder = stackSS[ssTop-1].preorder;
+            subtrees[subtreeTop++].subtreeSize = i-stackSS[ssTop-1].preorder+1;
+            --ssTop;
+            depthVector[depthTop++] = --depth;
+            if (ssTop == 0) {
+                break;
+            }else {
+                stackSS[ssTop-1].nChildren--;
+            }
+        }
     }
 
-    // Ahora debo recorrer el vector subtrees para elegir el subarbol adecuado
+
+    // Now we iter the subtree vector to choose the better subbtree
     int16_t  nodemin, min, posmin;
     uint16_t leftmost = MAX_UINT_16;
-    uint16_t lowerB = 0.25*nNodes, upperB = 0.75*nNodes;
-
     for (uint16_t i = 0; i < subtreeTop; ++i) {
-        //if (lowerB <= subtrees[i].subtreeSize && subtrees[i].subtreeSize <= upperB && subtrees[i].preorder < leftmost) {
-       if (((float)nNodes/4) <= subtrees[i].subtreeSize && subtrees[i].subtreeSize <= ((float)3*nNodes/4) && subtrees[i].preorder < leftmost) {
-          leftmost = nodemin = subtrees[i].preorder;
-          posmin = i;
-       }
+        //of all the subtrees we will prefer the ones that it sizes is between 25% and 75% of the actual block.
+        //and from all of those, we will prefer the left most (in preorder)
+        if (((float)nNodes/4) <= subtrees[i].subtreeSize && subtrees[i].subtreeSize <= ((float)3*nNodes/4) && subtrees[i].preorder < leftmost) {
+            leftmost = nodemin = subtrees[i].preorder;
+            posmin = i;
+        }
     }
 
+
+    //border case, this menas, that the last filter didn choose any candidate, so we will use another metric
+    //and the new subtree is the one that minimize nNodes-2*subtreeSize.
     if (leftmost == MAX_UINT_16) {
+        int16_t diff;
+        nodemin = subtrees[0].preorder,
+        min = nNodes - subtrees[0].subtreeSize - subtrees[0].subtreeSize,
+        posmin = 0;
 
-       int16_t diff;
-       nodemin = subtrees[0].preorder, 
-       min = nNodes - subtrees[0].subtreeSize - subtrees[0].subtreeSize,
-       posmin = 0;
-
-       for (uint16_t i = 1; i < subtreeTop; ++i) {
-
-          diff = nNodes - 2*subtrees[i].subtreeSize;
-
-          if (diff < 0){
-              diff = -diff;
-          }
+        for (uint16_t i = 1; i < subtreeTop; ++i) {
+            diff = nNodes - 2*subtrees[i].subtreeSize;
+            if (diff < 0){
+                diff = -diff;
+            }
        
-          if (diff < min) {
-             min = diff;
-             nodemin = subtrees[i].preorder;
-             posmin = i;
-          }
-
-       }    	
+            if (diff < min) {
+                min = diff;
+                nodemin = subtrees[i].preorder;
+                posmin = i;
+            }
+        }
     }
 
+
+    //actualize the subTreesize and its depth
     subTreeSize = subtrees[posmin].subtreeSize;
     depthSelectN = depthVector[posmin];
 
+    //return the tuple in function of nodemin
     return treeNode(nodemin >> 2,nodemin & 0x3);
 }
 
@@ -245,52 +254,9 @@ treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, ui
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+int8_t stack[100];
 
 treeNode dummyRootBlockNode(0,0);
-
 
 
 void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t level, 
