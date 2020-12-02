@@ -42,10 +42,69 @@ void testMaskInitT(){
 
 }
 
+void testNChildrenT(){
+    //0000 has 0 childrens
+    assert(nChildrenT[0x0000]==0);
+
+    //0001, 0010, 0100, 1000 has only one children
+    assert(nChildrenT[0x0001]==1);
+    assert(nChildrenT[0x0002]==1);
+    assert(nChildrenT[0x0004]==1);
+    assert(nChildrenT[0x0008]==1);
+
+    assert(nChildrenT[0x0003]==2);
+    assert(nChildrenT[0x0005]==2);
+    assert(nChildrenT[0x0006]==2);
+    assert(nChildrenT[0x0009]==2);
+}
+
+void testChildSkipT(){
+    // 0000 does not has childrens, so it doesnot has childrens to skip
+    assert(childSkipT[0x0000][0]==0);
+    assert(childSkipT[0x0000][1]==0);
+    assert(childSkipT[0x0000][2]==0);
+    assert(childSkipT[0x0000][3]==0);
+
+    //0001 the only children is right most, so it will never be skiped
+    assert(childSkipT[0x0001][0]==0);
+    assert(childSkipT[0x0001][1]==0);
+    assert(childSkipT[0x0001][2]==0);
+    assert(childSkipT[0x0001][3]==0);
+
+    //0010 has  only one 1 at position 2, son when 3 is inserted, it has to skip it
+    assert(childSkipT[0x0002][0]==0);
+    assert(childSkipT[0x0002][1]==0);
+    assert(childSkipT[0x0002][2]==0);
+    assert(childSkipT[0x0002][3]==1);
+
+    //1101 has  only one 1 at position 2, son when 3 is inserted, it has to skip it
+    assert(childSkipT[0x000d][0]==0);
+    assert(childSkipT[0x000d][1]==1);
+    assert(childSkipT[0x000d][2]==2);
+    assert(childSkipT[0x000d][3]==2);
+}
+
+void testChildT(){
+    // 0000 does not has childrens, so we mark its soughts Childrens with a -1
+    assert(childT[0x0000][0]==-1);
+    assert(childT[0x0000][1]==-1);
+    assert(childT[0x0000][2]==-1);
+    assert(childT[0x0000][3]==-1);
+
+    // 0101 has two childrens, so in position one, it has sought 1 children, and in position three, it has sought two childrens
+    assert(childT[0x0005][0]==-1);
+    assert(childT[0x0005][1]==1);
+    assert(childT[0x0005][2]==-1);
+    assert(childT[0x0005][3]==2);
+}
+
 //this test is used to test if the tables are right
 void testTables(){
     testShiftTTable();
     testMaskInitT();
+    testNChildrenT();
+    testChildSkipT();
+    testChildT();
 }
 
 void testAbsolutePosition(){

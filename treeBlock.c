@@ -558,112 +558,217 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
  }
 
 
-treeBlock *treeBlock::getPointer(uint16_t curFlag)
- {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//return the pointer to a treeBlock pointer, in function of the current flag (fronteir node)
+treeBlock *treeBlock::getPointer(uint16_t curFlag){
     return ((blockPtr *)ptr)[curFlag].P;
- }
+}
 
 
 
-treeNode treeBlock::skipChildrenSubtree(treeNode &node, uint8_t symbol, uint16_t &curLevel,
-                                        uint16_t maxLevel, uint16_t &curFlag)
- {
- 	 if (curLevel == maxLevel) return node;
- 	     
-    int16_t sTop = -1;
-      
+//takes me to the position in dfuds, where is the child of the node with symbol
+treeNode treeBlock::skipChildrenSubtree(treeNode &node, uint8_t symbol, uint16_t &curLevel,uint16_t maxLevel, uint16_t &curFlag){
+
+    //cant skip childs if you are at the max level
+    if (curLevel == maxLevel){
+        return node;
+    }
+
+    //this give us the codification of the current node
     uint8_t cNodeCod = (dfuds[node.first]>>shiftT[node.second]) & 0x000f;
-
+    //a table that computes the number of childs to skip in function of the codification and the symbol (0,1,2,3), see testChildSkipT in tests.c
     uint8_t skipChild = (uint8_t) childSkipT[cNodeCod][symbol];
-    
+    //number of childrens of the current node in function of the node codification
     uint8_t nChildren = nChildrenT[cNodeCod];
-        
-    stack[++sTop] = nChildren;
-    
-    treeNode currNode = node;
-    
-    nextNode(currNode);
 
+    //initialize the current node, and go to the next node
+    treeNode currNode = node;
+    nextNode(currNode);
     uint16_t curPreorder = absolutePosition(currNode);
 
-    if (ptr != NULL && curFlag < nPtrs && curPreorder > ((blockPtr *)ptr)[curFlag].flag)
-       ++curFlag; 
-    
-    
-    uint16_t nextFlag;
-    
-    if (nPtrs == 0 || curFlag >= nPtrs)
-       nextFlag = -1;
-    else       
-       nextFlag = ((blockPtr *)ptr)[curFlag].flag;
-        
-    
-    ++curLevel;
-    
-    uint8_t diff = nChildren - skipChild;
-    
-    while(curPreorder < nNodes && sTop >= 0 && diff < stack[0])  {
-       
-       if (curPreorder == nextFlag) {//ptr != NULL && curFlag < nPtrs && curPreorder > ((blockPtr *)ptr)[curFlag].flag)
-           ++curFlag;
-           if (nPtrs == 0 || curFlag >= nPtrs)
-              nextFlag = -1;
-           else
-              nextFlag = ((blockPtr *)ptr)[curFlag].flag;
-           --stack[sTop];
-        }
-        else if (curLevel < maxLevel) {
-        	  cNodeCod = (dfuds[curPreorder >> 2/*currNode.first*/]>>shiftT[curPreorder & 0x3/*currNode.second*/]) & 0x000f;
-           stack[++sTop] = nChildrenT[cNodeCod];
-           ++curLevel;
-        }
-        else --stack[sTop];
-
-        //nextNode(currNode);
-        ++curPreorder;
-               
-       while (sTop >= 0 && stack[sTop] == 0) {
-          --sTop;          
-          --curLevel;
-          if (sTop >= 0) --stack[sTop];
-       }
+    //if there exist another frointeir node after me
+    if (ptr != NULL && curFlag < nPtrs && curPreorder > ((blockPtr *)ptr)[curFlag].flag){
+       ++curFlag;
     }
-    
+
+
+    //we want to instantiate the next fronteir node
+    uint16_t nextFlag;
+    //if there isnt a next flag, we mark it with a -1
+    if (nPtrs == 0 || curFlag >= nPtrs){
+        nextFlag = -1;
+    }else{
+        //else, the next flag is the at the curFlag position (remember that before we did ++curFlag
+        nextFlag = ((blockPtr *)ptr)[curFlag].flag;
+    }
+    //and increase a level, because we are going down in the tree
+    ++curLevel;
+
+
+    //this two lines are like stack[0]=nChildrens
+    int16_t sTop = -1;
+    stack[++sTop] = nChildren;
+    //diference between the number of childrens and the skiped childrens
+    uint8_t diff = nChildren - skipChild;
+
+    //we traverse the tree in preorder
+    while(curPreorder < nNodes && sTop >= 0 && diff < stack[0])  {
+
+        //we are at a fronteir node
+        if (curPreorder == nextFlag) {
+            //go to next flag
+            ++curFlag;
+            if (nPtrs == 0 || curFlag >= nPtrs){
+                nextFlag = -1;
+            }else{
+                nextFlag = ((blockPtr *)ptr)[curFlag].flag;
+            }
+            //we substrac 1 from the current top, because this node is checked and its childrens are in another block
+            --stack[sTop];
+        }else if (curLevel < maxLevel) {
+            //we are not in a fronteir node
+            //calculate the code of the next node, using its preorder number on dfuds
+            cNodeCod = (dfuds[curPreorder >> 2]>>shiftT[curPreorder & 0x3]) & 0x000f;
+            //at the number of childrens of the current node, to the stack
+            stack[++sTop] = nChildrenT[cNodeCod];
+            //go down in the tree
+            ++curLevel;
+        }else {
+            //todo: esto ocurre realmente?
+            --stack[sTop];
+        }
+
+        //go to next node
+        ++curPreorder;
+
+        //this will set stop to thee previus node in preorder (is like going back)
+        while (sTop >= 0 && stack[sTop] == 0) {
+            --sTop;
+            --curLevel;
+            if (sTop >= 0){
+                --stack[sTop];
+            }
+        }
+
+    }
+
     currNode.first = curPreorder >> 2;
     currNode.second = curPreorder & 0x3;
     return currNode;
- }
+}
 
 
+
+//null node
 treeNode NULL_NODE = treeNode((NODE_TYPE)-1, 0);
+//return the next child in function of the symbol
+treeNode treeBlock::child(treeBlock *&p, treeNode & node, uint8_t symbol, uint16_t &curLevel, uint16_t maxLevel,uint16_t &curFlag){
 
-
-treeNode treeBlock::child(treeBlock *&p, treeNode & node, uint8_t symbol, uint16_t &curLevel, uint16_t maxLevel,
-                          uint16_t &curFlag)
- {
-    
+    //get codification of current node
     uint8_t cNodeCod = (dfuds[node.first]>>shiftT[node.second]) & 0x000f;
-    
+    //the rank of the node
     uint8_t soughtChild = (uint8_t) childT[cNodeCod][symbol];
-    
-    if (soughtChild == (uint8_t)-1) return NULL_NODE; //treeNode((NODE_TYPE)-1, 0); // No such child to go down
-    
-    if (curLevel == maxLevel && soughtChild != (uint8_t)-1) return node;
-       
-    treeNode currNode;    
-     
+    //if the rank is -1, it has now childrens in that position so we return a null node
+    if (soughtChild == (uint8_t)-1){
+        return NULL_NODE;
+    }
+    //if we are in a max level, we return the same node
+    //todo: pq lo anterior? esto pasa?
+    if (curLevel == maxLevel && soughtChild != (uint8_t)-1) {
+        return node;
+    }
+
+
+    treeNode currNode;
+    //if we are a fronteir node
     if (ptr != NULL && curFlag < nPtrs && absolutePosition(node) == ((blockPtr *)ptr)[curFlag].flag) {
-       p = ((blockPtr *)ptr)[curFlag].P;
-       curFlag = 0;
-       treeNode auxNode;
-       auxNode.first = auxNode.second = 0;
-       currNode = p->skipChildrenSubtree(auxNode, symbol, curLevel, maxLevel, curFlag);
+        //get the fronteir pointer
+        p = ((blockPtr *)ptr)[curFlag].P;
+
+        //set a dummy node to start searching in the next block
+        curFlag = 0;
+        treeNode auxNode;
+        auxNode.first = auxNode.second = 0;
+
+        //we search the child in the block of the fronteir node
+        currNode = p->skipChildrenSubtree(auxNode, symbol, curLevel, maxLevel, curFlag);
     }    
-    else    
-       currNode = skipChildrenSubtree(node, symbol, curLevel, maxLevel, curFlag);
-    
-    return currNode;  
- }
+    else{
+        //if we are not a fronteir node, we search the child in this block
+        currNode = skipChildrenSubtree(node, symbol, curLevel, maxLevel, curFlag);
+    }
+    return currNode;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

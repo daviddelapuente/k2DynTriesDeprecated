@@ -125,9 +125,6 @@ typedef struct
 
 
 
-
-
-
 /* Auxiliary tables */
 
 /* this table is used to right Shitf >> bits for the OFFSET_TYPE
@@ -142,10 +139,55 @@ const uint16_t shiftT[4] = {12,8,4,0};
  maskInitT[3]=0000000000001111*/
 const uint16_t maskInitT[4] = {0xf000,0x0f00,0x00f0,0x000f};
 
+/* number of childrens of a node. for example 9=1001 has 2 childrens because it has two 1 */
+const uint8_t nChildrenT[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 
 
+/*given a node and a symbol, this table says how many subtrees of the given node must be skipped to obtain the corresponding child subtree
+for example, for 1100, and 2 = childSkipT[12,2], you have to skip 2 nodes to insert in 2, because you have two 1 in the left side*/
 
 
+const int8_t childSkipT[16][4] = {
+/*0000*/ { 0,  0,  0,  0},
+/*0001*/ { 0,  0,  0,  0},
+/*0010*/ { 0,  0,  0,  1},
+/*0011*/ { 0,  0,  0,  1},
+/*0100*/ { 0,  0,  1,  1},
+/*0101*/ { 0,  0,  1,  1},
+/*0110*/ { 0,  0,  1,  2},
+/*0111*/ { 0,  0,  1,  2},
+/*1000*/ { 0,  1,  1,  1},
+/*1001*/ { 0,  1,  1,  1},
+/*1010*/ { 0,  1,  1,  2},
+/*1011*/ { 0,  1,  1,  2},
+/*1100*/ { 0,  1,  2,  2},
+/*1101*/ { 0,  1,  2,  2},
+/*1110*/ { 0,  1,  2,  3},
+/*1111*/ { 0,  1,  2,  3}
+};
+
+
+/*Given a node and a symbol, gives the rank of the symbol within the children of the node.
+If the children does not exist, returns -1*/
+
+const int8_t childT[16][4] = {
+/*0000*/ {-1, -1, -1, -1},
+/*0001*/ {-1, -1, -1,  1},
+/*0010*/ {-1, -1,  1, -1},
+/*0011*/ {-1, -1,  1,  2},
+/*0100*/ {-1,  1, -1, -1},
+/*0101*/ {-1,  1, -1,  2},
+/*0110*/ {-1,  1,  2, -1},
+/*0111*/ {-1,  1,  2,  3},
+/*1000*/ { 1, -1, -1, -1},
+/*1001*/ { 1, -1, -1,  2},
+/*1010*/ { 1, -1,  2, -1},
+/*1011*/ { 1, -1,  2,  3},
+/*1100*/ { 1,  2, -1, -1},
+/*1101*/ { 1,  2, -1,  3},
+/*1110*/ { 1,  2,  3, -1},
+/*1111*/ { 1,  2,  3,  4}
+};
 
 
 
@@ -171,34 +213,11 @@ within a byte*/
 const uint8_t nibblePattern[2][4] = {{0x80,0x40,0x20,0x10},
                                {0x08,0x04,0x02,0x01}};
 
-/*Given a node and a symbol, gives the rank of the symbol within the children of the node.
-  If the children does not exist, returns -1 */
-
-const int8_t childT[16][4] = {
-/*0000*/ {-1, -1, -1, -1}, 
-/*0001*/ {-1, -1, -1,  1},
-/*0010*/ {-1, -1,  1, -1},
-/*0011*/ {-1, -1,  1,  2},
-/*0100*/ {-1,  1, -1, -1},
-/*0101*/ {-1,  1, -1,  2},
-/*0110*/ {-1,  1,  2, -1},
-/*0111*/ {-1,  1,  2,  3},
-/*1000*/ { 1, -1, -1, -1}, 
-/*1001*/ { 1, -1, -1,  2}, 
-/*1010*/ { 1, -1,  2, -1},
-/*1011*/ { 1, -1,  2,  3},
-/*1100*/ { 1,  2, -1, -1},
-/*1101*/ { 1,  2, -1,  3},
-/*1110*/ { 1,  2,  3, -1},
-/*1111*/ { 1,  2,  3,  4}
-};
-
 
 
 
 const uint8_t firstChildT[16] = {(uint8_t)-1,1,2,1,3,1,2,1,4,1,2,1,3,1,2,1};
 
-const uint8_t nChildrenT[16] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 
 
 // Given the code of a node and a symbol to insert, gives the insertion rank of the symbol
@@ -223,26 +242,6 @@ const int8_t childRankT[16][4] = {
 };
 
 
-// given a node and a symbol, this table says how many subtrees of the given node must be skipped to obtain the corresponding child subtree
-
-const int8_t childSkipT[16][4] = {
-/*0000*/ { 0,  0,  0,  0}, 
-/*0001*/ { 0,  0,  0,  0},
-/*0010*/ { 0,  0,  0,  1},
-/*0011*/ { 0,  0,  0,  1},
-/*0100*/ { 0,  0,  1,  1},
-/*0101*/ { 0,  0,  1,  1},
-/*0110*/ { 0,  0,  1,  2},
-/*0111*/ { 0,  0,  1,  2},
-/*1000*/ { 0,  1,  1,  1}, 
-/*1001*/ { 0,  1,  1,  1}, 
-/*1010*/ { 0,  1,  1,  2},
-/*1011*/ { 0,  1,  1,  2},
-/*1100*/ { 0,  1,  2,  2},
-/*1101*/ { 0,  1,  2,  2},
-/*1110*/ { 0,  1,  2,  3},
-/*1111*/ { 0,  1,  2,  3}
-};
 
 
 // given a symbol in {0, 1, 2, 3}, yields a unary node representing that symbol
