@@ -254,6 +254,17 @@ treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, ui
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 int8_t stack[100];
 
 treeNode dummyRootBlockNode(0,0);
@@ -584,20 +595,6 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //return the pointer to a treeBlock pointer, in function of the current flag (fronteir node)
 treeBlock *treeBlock::getPointer(uint16_t curFlag){
     return ((blockPtr *)ptr)[curFlag].P;
@@ -839,13 +836,6 @@ void insertTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
 
 
 
-
-
-
-
-
-
-
 //return true if the string str is a path in a block
 bool isEdge(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, uint16_t maxDepth){
 
@@ -912,60 +902,49 @@ bool isEdgeTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth) {
 
 
 
+//todo: borre uint64_t totalBlocks = 0, totalNodes = 0;
 
+//this function calculate the size of the whole tree (but only considering the treeBlocks)
+uint64_t treeBlock::size(){
 
+    //calculate the size of the block
+    uint64_t totalSize = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t *) + sizeof(blockPtr *) + sizeof(uint16_t) + nPtrs*(sizeof(treeBlock *) + sizeof(uint16_t));
+    totalSize += sizeof(uint16_t)*((maxNodes + 3) / 4); // dfuds array
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-uint64_t totalBlocks = 0, totalNodes = 0;
-
-
-uint64_t treeBlock::size()
- {
- 	
-    totalBlocks++;
-    
-    totalNodes += nNodes;
-     	
-    uint64_t totalSize = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t *) + sizeof(blockPtr *) 
-                       + sizeof(uint16_t) + nPtrs*(sizeof(treeBlock *) + sizeof(uint16_t));
-    
-    totalSize += sizeof(uint16_t)*((maxNodes + 3) / 4); // dfuds array  
-    
-    for(uint16_t i = 0; i < nPtrs; ++i)
-       totalSize += ((blockPtr*)ptr)[i].P->size();    
-    
+    //for each fronteir node, calculate each size
+    for(uint16_t i = 0; i < nPtrs; ++i) {
+        //todo: cambiar el nombre de ptr a algo mas relacionado con la frontera
+        totalSize += ((blockPtr *) ptr)[i].P->size();
+    }
+    //return the total size
     return totalSize;
- }
+}
 
 
-uint64_t sizeTrie(trieNode *t)
- {
- 	
- 	if (!t) return 0;
- 	
- 	uint64_t totalSize = /*sizeof(void *) +*/ 4*sizeof(uint16_t); // si usamos hasta 8 niveles de punteros, los punteros a hijo del trie se pueden implementar con 16 bits
- 	
-   if (!t->block) {
-       totalSize += sizeTrie(t->children[0]);
-       totalSize += sizeTrie(t->children[1]);
-       totalSize += sizeTrie(t->children[2]);
-       totalSize += sizeTrie(t->children[3]);
-   }  	
-  	else {
-      totalSize += ((treeBlock *)t->block)->size();  
-   } 
- 
-   return totalSize;
- }
+//return the size of the whole trie
+uint64_t sizeTrie(trieNode *t){
+
+    //base case: if the pointer is null return 0
+    if (!t) {
+ 	    return 0;
+ 	}
+
+    //if we use up to 8 levels of pointers. the pointers can implemented with 16 bits
+    //todo: me tinca que podemos cambiar esta parte para que la funcion size venga de la estructura, y que no este harcodeada
+    //this is the size of the actual trie
+    uint64_t totalSize = 4*sizeof(uint16_t);
+
+    //if we are not a treeBlock
+    if (!t->block) {
+        //we sum the the size of the children tries
+        totalSize += sizeTrie(t->children[0]);
+        totalSize += sizeTrie(t->children[1]);
+        totalSize += sizeTrie(t->children[2]);
+        totalSize += sizeTrie(t->children[3]);
+    }else{
+        //if we are a treeBlock, we sum the size of the treeBlock
+  	    totalSize += ((treeBlock *)t->block)->size();
+  	}
+    //return the total sum
+  	return totalSize;
+}
