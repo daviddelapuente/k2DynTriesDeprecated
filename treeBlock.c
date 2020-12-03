@@ -743,6 +743,7 @@ treeNode treeBlock::child(treeBlock *&p, treeNode & node, uint8_t symbol, uint16
 
 /*this function consume the string that represent the morton code, until the path it represent finished
 finally call a function that insert the new path in a block*/
+//todo: consideraria cambiarle el nombre a esta funcion, y a las demas inserts
 void insertar(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, uint16_t maxDepth){
 
     //curBlock is pointing to the root because we will start in that point. curBlockAux is a pointer we will use to decend the tree
@@ -788,103 +789,143 @@ void insertar(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, ui
 
 
 
+//this will create and insert the respective nodes in the trie and in the treeBlocks
+void insertTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void insertTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth)
- {
+    //this will consume the string until a children does not exist.
+    //this will leave i as the position in str from where the path does not exist or if the path continue in a treeBlock
     uint64_t i = 0;
-    treeBlock *p;
-    
-    while (t->children[str[i]]) 
-       t = t->children[str[i++]];
-    
+    while (t->children[str[i]]){
+        t = t->children[str[i++]];
+    }
+
+
+    //if i<L1 we insert it uncompressed
     while (i < L1) {
-       t->children[str[i]] = (trieNode *)malloc(sizeof(trieNode));
-       t = t->children[str[i]];
-       i++;
-       t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
-       t->block = NULL;
+        //create a new trieNode
+        t->children[str[i]] = (trieNode *)malloc(sizeof(trieNode));
+        t = t->children[str[i]];
+        //go to next i
+        i++;
+        t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
+        t->block = NULL;
     }
-    
+
+
+    //border case: we have that t (with i>L) is null (because that block was create recently)
+    // this always pass when the previous while stop when i=L1
+    treeBlock *p;
     if (t->block == NULL) {
-       t->block = malloc(sizeof(treeBlock));
-       p = (treeBlock*)t->block;       
-       p->dfuds = (uint16_t *)calloc(2, sizeof(uint16_t));
-       p->rootDepth = L1;    
-       p->nNodes = 1;
-       p->ptr = NULL;
-       p->nPtrs = 0;
-       p->maxNodes = 4;
+        //we create the treeBlock
+        t->block = malloc(sizeof(treeBlock));
+        p = (treeBlock*)t->block;
+        p->dfuds = (uint16_t *)calloc(2, sizeof(uint16_t));
+        p->rootDepth = L1;
+        p->nNodes = 1;
+        p->ptr = NULL;
+        p->nPtrs = 0;
+        p->maxNodes = 4;
+    }else{
+        //if the block exist, we assign it to p
+        p = (treeBlock *) t->block;
     }
-    else 
-       p = (treeBlock*)t->block;
-    
+
+    //we call insertar, that will insert the remaining string str[i...length(str)}
+    //in treeBlocks
     insertar(p, &str[i], length-i, i, maxDepth); 
- }
+}
 
 
 
 
-bool isEdge(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, uint16_t maxDepth) 
- {
+
+
+
+
+
+
+
+
+//return true if the string str is a path in a block
+bool isEdge(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, uint16_t maxDepth){
+
+    //curBlock is pointing to the root because we will start in that point. curBlockAux is a pointer we will use to decend the tree
     treeBlock *curBlock = root, *curBlockAux;
-    uint64_t i;
+    //set a dummy treeNode, and an aux pointer to descend the tree
     treeNode curNode(0,0), curNodeAux;
-    uint16_t /*level = 0,*/ curFlag = 0;
-    
+    //dummy flag
+    uint16_t curFlag = 0;
+
+    //for each char in the string
+    uint64_t i;
     for (i = 0; i < length; ++i) {
-       curBlockAux = curBlock;       
-       curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
-       
-       if (curNodeAux.first == (NODE_TYPE)-1) break;
-       else {
-          //if (curBlock != curBlockAux) curFlag = 0;
+        //we will get the child in function of the simbol str[i}
+        curBlockAux = curBlock;
+        curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
+
+        //if the child is a -1, that means that the path does not exist, so we break
+        if (curNodeAux.first == (NODE_TYPE)-1){
+            break;
+        }
+        else {
+          //if not, we continue
           curNode = curNodeAux;
-       }
-       
-       if (curBlock->nPtrs > 0 && absolutePosition(curNode) == curFlag) {
-          // Goes down to a child block
-          curBlock = curBlock->getPointer(curFlag);
-          curNode.first = 0;
-          curNode.second = 0;
-       }
-    }  
-    
-    // inserts str[i..length-1] starting from the current node
-    // The new nodes inserted will descend from curNode 
-    return length == i;  
- }
+        }
+
+        //if we are in a frontier node, we need to go down to the corresponding block
+        if (curBlock->nPtrs > 0 && absolutePosition(curNode) == curFlag) {
+            // Goes down to a child block
+            curBlock = curBlock->getPointer(curFlag);
+            curNode.first = 0;
+            curNode.second = 0;
+        }
+    }
+
+    /*finally we return i==length that means: if we broke the previous cycle, the path does not exist*/
+    return length == i;
+}
 
 
 
-bool isEdgeTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth)
- {
+//todo: consideraria cambiarle el nombre
+//return true if the path represented with the str, is in the trie (and in the tree)
+bool isEdgeTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth) {
+
+    //this will consume the string until a children does not exist.
+    //this will leave i as the position in str from where the path does not exist or if the path continue in a treeBlock
     uint64_t i = 0;
-    treeBlock *p; 	
- 	
-    while (t->children[str[i]] && !t->block) 
-       t = t->children[str[i++]];
-    
-    p = (treeBlock*)t->block;
-    
-    if (p)
-       return isEdge(p, &str[i], length-i, i, maxDepth); 
-    else
-       return false; 
- }
+    while (t->children[str[i]] && !t->block) {
+        t = t->children[str[i++]];
+    }
+
+    /*instantiate p as the block of t (if it does not exist, then return false, but if exist, that means that exist in a treeBlock so we call
+    isEdge to continue searching in the blocks)*/
+    treeBlock *p= (treeBlock *) t->block;
+    if (p) {
+        return isEdge(p, &str[i], length - i, i, maxDepth);
+    } else {
+        return false;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 uint64_t totalBlocks = 0, totalNodes = 0;

@@ -121,7 +121,7 @@ int main()
         //each 1000000 print an edge
         if (i%1000000 == 0) { printf("%lu %lu\n", i, count); fflush(stdout);}
         start = clock();
-        //return tre if the edge is in the tree. t=trie pointer, str=morton code, 23=length of the morton code, 22=max level
+        //return true if the edge is in the tree. t=trie pointer, str=morton code, 23=length of the morton code, 22=max level
         found = isEdgeTrie(t, str, 23, 22);//isEdge(&B, str, 23, 22);
         diff += clock() - start;
         if (found) count++;
