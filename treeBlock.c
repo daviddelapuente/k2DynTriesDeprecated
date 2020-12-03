@@ -741,65 +741,66 @@ treeNode treeBlock::child(treeBlock *&p, treeNode & node, uint8_t symbol, uint16
 
 
 
+/*this function consume the string that represent the morton code, until the path it represent finished
+finally call a function that insert the new path in a block*/
+void insertar(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, uint16_t maxDepth){
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void insertar(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, uint16_t maxDepth) 
- {
+    //curBlock is pointing to the root because we will start in that point. curBlockAux is a pointer we will use to decend the tree
     treeBlock *curBlock = root, *curBlockAux;
-    uint64_t i;
+    //set a dummy treeNode, and an aux pointer to descend the tree
     treeNode curNode(0,0), curNodeAux;
-    uint16_t /*level = 0,*/ curFlag = 0;
-        
+    //dummy flag
+    uint16_t curFlag = 0;
+
+    //for every char of the string (the morton code) until we find the part were the path does not exist
+    uint64_t i;
     for (i = 0; i < length; ++i) {
-       curBlockAux = curBlock;       
-       curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
-       
-       if (curNodeAux.first == (NODE_TYPE)-1) break;
-       else curNode = curNodeAux;
-       
-       
-       if (curBlock->nPtrs > 0 && absolutePosition(curNode) == curFlag) {
-          // Goes down to a child block
-          curBlock = curBlock->getPointer(curFlag);
-          curNode.first = 0;
-          curNode.second = 0;
-       }
-    }  
+
+        //we get the child using the morton code char (str[i])
+        curBlockAux = curBlock;
+        curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
+
+        //if the child function returned a treeNode with a -1, that means that the path does not exist. so we break here.
+        if (curNodeAux.first == (NODE_TYPE)-1) {
+            break;
+        }
+        else {
+            //else, we update the curNode
+            curNode = curNodeAux;
+        }
+
+        //if we are in a fronteir node
+        if (curBlock->nPtrs > 0 && absolutePosition(curNode) == curFlag) {
+            // we go to the block where the flag is pointing
+            curBlock = curBlock->getPointer(curFlag);
+            //and reset the treeNode (because we will start in a new block)
+            curNode.first = 0;
+            curNode.second = 0;
+        }
+    }
     
-    // inserts str[i..length-1] starting from the current node
-    // The new nodes inserted will descend from curNode 
+    /*
+    the for cycle will stop at some i where the path does not exist
+    so we have to inserts str[i..length-1] starting from the current node
+    The new nodes inserted will descend from curNode*/
     curBlock->insert(curNode, &str[i], length-i, level, maxDepth, curFlag);
-    
- }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 void insertTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth)
