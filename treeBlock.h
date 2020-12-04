@@ -122,8 +122,6 @@ typedef struct
 
 
 
-
-
 /* Auxiliary tables */
 
 /* this table is used to right Shitf >> bits for the OFFSET_TYPE

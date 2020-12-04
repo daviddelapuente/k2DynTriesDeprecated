@@ -264,37 +264,57 @@ treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, ui
 
 
 
-
+//todo:que hacen?
 int8_t stack[100];
-
 treeNode dummyRootBlockNode(0,0);
 
+//todo: que hace?
+void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth, uint16_t curFlag){
 
-void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t level, 
-                       uint64_t maxDepth, uint16_t curFlag)
- {
-    treeNode nodeAux = node;
-    
-    if (rootDepth </*=*/ L1) Nt = S1;
-    else if (rootDepth <= L2) Nt = S2;
-    else Nt = S3;
-    
-    if (ptr!=NULL && curFlag < nPtrs && absolutePosition(node) == ((blockPtr *)ptr)[curFlag].flag) {
-       // insertion must be carried out in the root of a child block
-        uint8_t cNodeCod = (dfuds[node.first]>>shiftT[node.second]) & 0x000f;
-        
-        register uint64_t aux = 4*(3-node.second);        
-        
-        dfuds[node.first] = dfuds[node.first] & ~(0xF << aux); 
-           
-        dfuds[node.first] = dfuds[node.first] | (insertT[cNodeCod][str[0]] << aux);
-        
-        ((blockPtr *)ptr)[curFlag].P->insert(dummyRootBlockNode, str, length, level, maxDepth, 0);
-
-        return;
+    //first we determine the max size of the blocks depending on the deepth
+    if (rootDepth < L1) {
+        //todo: esto se puede eliminar? pq los nodos bajo L1 no son blockes
+        //shorters nodes are at the begining
+        Nt = S1;
+    }else if (rootDepth <= L2) {
+        //medium size blocks are at the medium
+        Nt = S2;
     }
-    else
-    if (length == 1) {
+    else {
+        //biggers nodes are in the deeper levels
+        Nt = S3;
+    }
+
+
+    //the insertion occurs in a frontier node, so we insert in a child block
+    if (ptr!=NULL && curFlag < nPtrs && absolutePosition(node) == ((blockPtr *)ptr)[curFlag].flag) {
+        // insertion must be carried out in the root of a child block
+
+        //get the codification of the node we want to insert
+        uint8_t cNodeCod = (dfuds[node.first]>>shiftT[node.second]) & 0x000f;
+
+        //todo:porque un register?
+        /*the idea of aux is to shiftleft a 16bit to mask our node.
+        for example if we have xxxx xxxx 1101 xxxx, node.second is = 2 (the x means that value is a 0 or 1, we only mind about node.second)
+        so if we have the 16bit mask = 0xF = 0000 0000 0000 1111, we will want to shift it 4 times to left
+        that is 4*(3-node.second) so the mask will be mask<<aux = 0000 0000 1111 0000
+        and if we negate it it will be 1111 1111 0000 1111, so our new codification will be xxxx xxxx 0000 xxxx*/
+        register uint64_t aux = 4*(3-node.second);
+        dfuds[node.first] = dfuds[node.first] & ~(0xF << aux);
+
+        /*so we have the node 1101 and we insert in the morton code 2 (str[0]=2)
+        that will leave the node as 1111 we use the inserT table to compute thar (see test.c)
+        then we shift right aux times to set it at the same position of the previous mask
+        and then we or them xxxx xxxx 0000 xxxx or 0000 0000 1111 0000*/
+        dfuds[node.first] = dfuds[node.first] | (insertT[cNodeCod][str[0]] << aux);
+
+        //we insert the str in the corresponding child block, using dummyRootBlockNode <0,0> for codification
+        ((blockPtr *)ptr)[curFlag].P->insert(dummyRootBlockNode, str, length, level, maxDepth, 0);
+        return;
+
+
+
+    }else if (length == 1) {
        uint8_t cNodeCod = (dfuds[node.first]>>shiftT[node.second]) & 0x000f;
        
        register uint64_t aux = 4*(3-node.second);       
@@ -306,6 +326,7 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
     }
     else 
     if (nNodes + length - 1 <= maxNodes) {
+        treeNode nodeAux = node;
        // there is room in current block for new nodes
                  
        // Se coloca en la posicion donde se insertaran los nuevos descendientes de node
@@ -902,10 +923,15 @@ bool isEdgeTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth) {
 
 
 
-//todo: borre uint64_t totalBlocks = 0, totalNodes = 0;
+//tnumber of blocks and number of nodes
+uint64_t totalBlocks = 0, totalNodes = 0;
 
 //this function calculate the size of the whole tree (but only considering the treeBlocks)
 uint64_t treeBlock::size(){
+
+    //for each block we increment the number of blocks and sum its nodes
+    totalBlocks++;
+    totalNodes += nNodes;
 
     //calculate the size of the block
     uint64_t totalSize = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t *) + sizeof(blockPtr *) + sizeof(uint16_t) + nPtrs*(sizeof(treeBlock *) + sizeof(uint16_t));

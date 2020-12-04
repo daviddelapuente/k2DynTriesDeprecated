@@ -98,6 +98,13 @@ void testChildT(){
     assert(childT[0x0005][3]==2);
 }
 
+void testInsertT(){
+    assert(insertT[0x000d][0]==0xd);
+    assert(insertT[0x000d][1]==0xd);
+    assert(insertT[0x000d][2]==0xf);
+    assert(insertT[0x000d][3]==0xd);
+}
+
 //this test is used to test if the tables are right
 void testTables(){
     testShiftTTable();
@@ -105,6 +112,7 @@ void testTables(){
     testNChildrenT();
     testChildSkipT();
     testChildT();
+    testInsertT();
 }
 
 void testAbsolutePosition(){
