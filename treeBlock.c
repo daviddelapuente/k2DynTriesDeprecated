@@ -263,7 +263,6 @@ treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, ui
 
 
 
-
 //todo:que hacen?
 int8_t stack[100];
 treeNode dummyRootBlockNode(0,0);
@@ -313,19 +312,24 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
         return;
 
 
-
+    /*if the length of str is 1 (this means that we only need to insert one node
+    we dont need to filter if the block has reached the max size, because int the next else if, we
+    ensure that, when inserting in a block, we dont reach maxSize-1 (to reach this else if)*/
     }else if (length == 1) {
-       uint8_t cNodeCod = (dfuds[node.first]>>shiftT[node.second]) & 0x000f;
-       
-       register uint64_t aux = 4*(3-node.second);       
-       
-       dfuds[node.first] = dfuds[node.first] & ~(0xF << aux); 
-          
-       dfuds[node.first] = dfuds[node.first] | (insertT[cNodeCod][str[0]] << aux);
-       return;            
-    }
-    else 
-    if (nNodes + length - 1 <= maxNodes) {
+
+        //we get the node codification
+        uint8_t cNodeCod = (dfuds[node.first]>>shiftT[node.second]) & 0x000f;
+        //get the offset for the mask (exactly as the previus if statment)
+        register uint64_t aux = 4*(3-node.second);
+        /*then update the node codification
+        notice that because we are in the last level, we dont need to actualize the number of nodes. becaese the node is
+        represented with a bit*/
+        dfuds[node.first] = dfuds[node.first] & ~(0xF << aux);
+        dfuds[node.first] = dfuds[node.first] | (insertT[cNodeCod][str[0]] << aux);
+        return;
+
+
+    }else if (nNodes + length - 1 <= maxNodes) {
         treeNode nodeAux = node;
        // there is room in current block for new nodes
                  
