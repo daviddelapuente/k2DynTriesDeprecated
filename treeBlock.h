@@ -208,7 +208,8 @@ const int8_t insertT[16][4] = {
 };
 
 
-
+// given a symbol in {0, 1, 2, 3}, yields a unary node representing that symbol
+const int8_t symbol2NodeT[4] = {0x8,0x4,0x2,0x1};
 
 
 
@@ -251,11 +252,6 @@ const int8_t childRankT[16][4] = {
 /*1110*/ {-1, -1, -1,  1},
 /*1111*/ {-1, -1, -1, -1}
 };
-
-
-
-// given a symbol in {0, 1, 2, 3}, yields a unary node representing that symbol
-const int8_t symbol2NodeT[4] = {0x8,0x4,0x2,0x1};
 
 
 #endif

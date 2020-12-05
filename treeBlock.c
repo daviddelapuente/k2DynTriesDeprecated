@@ -270,6 +270,9 @@ treeNode dummyRootBlockNode(0,0);
 //todo: que hace?
 void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth, uint16_t curFlag){
 
+    //todo: talvez podemos sacarlo de aqui y ponerlo en los ifs que si aparece?
+    treeNode nodeAux = node;
+
     //first we determine the max size of the blocks depending on the deepth
     if (rootDepth < L1) {
         //todo: esto se puede eliminar? pq los nodos bajo L1 no son blockes
@@ -328,268 +331,292 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
         dfuds[node.first] = dfuds[node.first] | (insertT[cNodeCod][str[0]] << aux);
         return;
 
-
+    //there is room in current block for new nodes
     }else if (nNodes + length - 1 <= maxNodes) {
-        treeNode nodeAux = node;
-       // there is room in current block for new nodes
-                 
-       // Se coloca en la posicion donde se insertaran los nuevos descendientes de node
-       node = skipChildrenSubtree(node, str[0], level, maxDepth, curFlag);
-       
-       treeNode origNode, destNode;
-       
-       --length; 
-       
-       destNode.first =  (nNodes + length - 1)/4;
-       destNode.second = (nNodes + length - 1)%4;
-             
-       origNode.first = (nNodes - 1)/4;
-       origNode.second = (nNodes - 1)%4;
-       
-       uint16_t preorderNode = absolutePosition(node);       
-       uint16_t preorderOrigNode = absolutePosition(origNode);
-       uint16_t preorderDestNode =  absolutePosition(destNode);
-       
-       register uint64_t aux, aux2;       
-       
-       while (preorderOrigNode >= preorderNode) {
-          aux = 4*(3-(preorderDestNode & 0x3) /*destNode.second*/);
-          aux2 = preorderDestNode >> 2;
-         
-          dfuds[aux2/*destNode.first*/] = dfuds[aux2/*destNode.first*/] & ~(0xF << aux);
-                                 
-          dfuds[aux2/*destNode.first*/] = dfuds[aux2/*destNode.first*/] 
-                                 | (((dfuds[preorderOrigNode>>2/*origNode.first*/] >> 4*(3-(preorderOrigNode & 0x3)/*origNode.second*/)) 
-                                 & 0x000F) << aux) ;            
-          //prevNode(destNode);
-          --preorderDestNode;          
-          //prevNode(origNode);
-          --preorderOrigNode;
-       }
 
-       uint8_t cNodeCod = (dfuds[nodeAux.first]>>shiftT[nodeAux.second]) & 0x000f;
-        
-       dfuds[nodeAux.first] = dfuds[nodeAux.first]
-                              & ~(0xF << 4*(3-nodeAux.second)); 
-         
-       dfuds[nodeAux.first] = dfuds[nodeAux.first] 
-                             | (insertT[cNodeCod][str[0]] << 4*(3-nodeAux.second));
-       
-       //nextNode(origNode);
-       ++preorderOrigNode;
-    
-       for (uint16_t i = 1; i <= length; i++) {
-          aux = 4*(3-(preorderOrigNode & 0x3)/*origNode.second*/);
-          aux2 = preorderOrigNode >> 2;
+        /*in this part we will modify de dfus array. inserting all tho new nodes in the middle
+        so we move all the nodes in the right half
+        for example if we have [a,b,c,d,e,-,-,-,-,-,-] (where - are empty spaces)
+        and wi want to insert three nodes: 1, 2 and 3 between c and d
+        first we move d and e 3 spaces -> [a,b,c,-,-,-d,e,-,-,-]
+        and then we insert the nodes -> [a,b,c,1,2,3,d,e,-,-,-]*/
 
-          dfuds[aux2/*origNode.first*/] = dfuds[aux2/*origNode.first*/] & ~(0xF << aux); 
-          
-          dfuds[aux2/*origNode.first*/] = dfuds[aux2/*origNode.first*/] 
-                                 | (symbol2NodeT[str[i]] << aux);
-          ++nNodes;          
-          //nextNode(origNode);
-          ++preorderOrigNode;
-       }
-    
-       // Now updates the flags, as new nodes have been added
-       if (ptr)
-          for (uint16_t i = curFlag; i < nPtrs; ++i)
-             ((blockPtr *)ptr)[i].flag += length;
+        //first we substract one from length because this node is already inserted (but maybe we need to insert some childs)
+        --length;
+        /*then we move the pointer node to the its child position with str[0] (this is where the new descendants will be inserted)
+        this node will represent the first node we will move (the first node of the right half, or in our example this node is d)*/
+        node = skipChildrenSubtree(node, str[0], level, maxDepth, curFlag);
+
+
+        //we create some auxiliar nodes that will help with the insertion, this node will be used to move the nodes in the right half
+        treeNode origNode, destNode;
+        //origNode will represent the last node in the right half that is not empty (in out example this node is e)
+        origNode.first = (nNodes - 1)/4;
+        origNode.second = (nNodes - 1)%4;
+        //destNode will represent the last position of the new right half (in our example, the position will be where is e after moving the array [a,b,c,1,2,3,d,e,-,-,-])
+        destNode.first =  (nNodes + length - 1)/4;
+        destNode.second = (nNodes + length - 1)%4;
+
+
+        //this are the positions of the previous nodes in the dfuds
+        uint16_t preorderNode = absolutePosition(node);
+        uint16_t preorderOrigNode = absolutePosition(origNode);
+        uint16_t preorderDestNode =  absolutePosition(destNode);
+
+
+        //registers to mask the updates of the nodes. (see the first if statement of this if-else)
+        register uint64_t aux, aux2;
+
+        /*what this does is to copy all from [preorderNode,preorderOrigNode] to [preorderOriginNode,preorderDestNode]
+        in our example is when we do [a,b,c,d,e,-,-,-,-,-,-] -> [a,b,c,-,-,-d,e,-,-,-]*/
+        while (preorderOrigNode >= preorderNode) {
+            aux = 4*(3-(preorderDestNode & 0x3) );
+            aux2 = preorderDestNode >> 2;
+            //prerare the node in the new right half to be updated
+            dfuds[aux2] = dfuds[aux2] & ~(0xF << aux);
+            //update the node with the node where origNode is pointing
+            dfuds[aux2] = dfuds[aux2]| (((dfuds[preorderOrigNode>>2 ] >> 4*(3-(preorderOrigNode & 0x3) ))& 0x000F) << aux) ;
+            //go to the next node from right to left
+            --preorderDestNode;
+            --preorderOrigNode;
+        }
+
+
+        //in this part we insert the original node (this means only editing the bits in that position)
+        uint8_t cNodeCod = (dfuds[nodeAux.first]>>shiftT[nodeAux.second]) & 0x000f;
+        dfuds[nodeAux.first] = dfuds[nodeAux.first] & ~(0xF << 4*(3-nodeAux.second));
+        dfuds[nodeAux.first] = dfuds[nodeAux.first] | (insertT[cNodeCod][str[0]] << 4*(3-nodeAux.second));
+        //we dont want to copy this node. si we go to the next node in preorder
+        ++preorderOrigNode;
+
+
+        /*what this does is to insert the new nodes
+        in our example is when we do [a,b,c,-,-,-d,e,-,-,-]->[a,b,c,1,2,3,d,e,-,-,-]*/
+        for (uint16_t i = 1; i <= length; i++) {
+            //prepare the mask to insert the node
+            aux = 4*(3-(preorderOrigNode & 0x3));
+            aux2 = preorderOrigNode >> 2;
+            dfuds[aux2] = dfuds[aux2] & ~(0xF << aux);
+            /*actualize what dfuds has in that position. the new node will by a secuence of 4 bits with only one (because the node is new)
+            for example if we are inserting a 2 in the morton code the number will be 0010*/
+            dfuds[aux2] = dfuds[aux2] | (symbol2NodeT[str[i]] << aux);
+            //sum 1 to number of nodes of the blocks
+            ++nNodes;
+            //go to next node in preorder
+            ++preorderOrigNode;
+        }
+
+
+        // Now updates the flags (if required), as new nodes have been added
+        if (ptr){
+            for (uint16_t i = curFlag; i < nPtrs; ++i){
+                //we only need to move the flags length spaces to the right
+                ((blockPtr *)ptr)[i].flag += length;
+            }
+        }
+
+        //todo: agrege un return
+        return;
+
+
     }
     else {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
        // there is no room for the new nodes
 
-       if (nNodes + length - 1 <= Nt) { // block can still grow
+
+
+       if (nNodes + length - 1 <= Nt) {
+           // block can still grow
           // if the block can still grow, grow it.
           grow(length-1);
-          // After growing, recursively inserts the node 
+          // After growing, recursively inserts the node
           insert(node, str, length, level, maxDepth, curFlag);
-       
-       }
-       else {
-          treeNode selectedNode, originalSelectedNode;
-          
-          uint16_t subTreeSize, depthSelectedNode;
-          
-          originalSelectedNode = selectedNode = selectSubtree2(maxDepth, subTreeSize, depthSelectedNode);
-                   
-          // Ahora copio el subarbol seleccionado a un nuevo bloque
-          
-          uint16_t *new_dfuds = (uint16_t *)calloc((sizeArray[subTreeSize]+4-1)/4, sizeof(uint16_t));
-          
-          treeNode destNode(0,0);
-          
-          uint16_t copiedNodes=0, copiedFlags = 0;
-                    
-          bool insertionInNewBlock = false;
-          
-          treeNode insertionNode = node;
-          
-          uint16_t flag, auxFlag=0, flagSelectedNode;
-          
-          uint16_t preorderSelectedNode = absolutePosition(selectedNode);    
-          
-          for (flag = 0; flag < nPtrs; ++flag)
-             if (((blockPtr *)ptr)[flag].flag > preorderSelectedNode) break;
-          
-          flagSelectedNode = flag; // almacena el primer flag que es > al selected node
-                                   // esto es para saber despues donde poner el flag del selected
-                                   // node
-          
-          blockPtr *new_ptr;
-          
-          if (nPtrs > 0) new_ptr = (blockPtr *)malloc(sizeof(blockPtr)*nPtrs);
-          else new_ptr = NULL;          
-          
-          uint16_t curFlagNewBlock; // flag en el nuevo bloque, por si la insercion continua en ese bloque          
-             
-          bool isInRoot = false;          
-          
-          uint16_t preorderDestNode = absolutePosition(destNode);          
-          
-          while (copiedNodes < subTreeSize) {
-          
-             if (selectedNode == node) {
-                // the original node where insertion must be carried out
-                // is stored in the child (new) block
-                insertionInNewBlock = true;
-                
-                if (destNode != treeNode(0,0))                
-                   insertionNode = destNode; // this will be the node where insertion must be
-                                             // carried out in the new block
-                else { insertionNode = node; isInRoot = true;}              
-                
-                curFlagNewBlock = copiedFlags;
-             
-             }
-             
-             if (ptr!=NULL && flag < nPtrs && preorderSelectedNode == ((blockPtr *)ptr)[flag].flag) {
-               //Copiar puntero para el nuevo bloque
-                new_ptr[auxFlag].flag = preorderDestNode;
-                new_ptr[auxFlag].P = ((blockPtr *)ptr)[flag].P;
-                ++flag;
-                ++auxFlag;
-                ++copiedFlags;
-             }
-             
-             register uint64_t aux = 4*(3-selectedNode.second);             
-             
-             new_dfuds[destNode.first] = new_dfuds[destNode.first]
-                                       | (((dfuds[selectedNode.first] >> aux/*4*(3-selectedNode.second)*/)
-                                       & 0x000F) << 4*(3-destNode.second));
 
-             if (selectedNode != originalSelectedNode)                 
-                dfuds[selectedNode.first] =  dfuds[selectedNode.first]
-                                            & ~(0xF << aux/*4*(3-selectedNode.second)*/);             
-                    
-             nextNode(destNode);
-             ++preorderDestNode;
-             nextNode(selectedNode);
-             ++preorderSelectedNode;
-             ++copiedNodes;
-          }
-          
-          bool insertionBeforeSelectedTree = true;
-          
-          if (!insertionInNewBlock && flag <= curFlag)
-          	 // el punto de insercion esta despues del subarbol seleccionado
-             insertionBeforeSelectedTree = false;   
-                    
-          treeBlock *new_block = (treeBlock *)malloc(sizeof(treeBlock));
-          
-          new_block->nNodes = subTreeSize;
-          new_block->maxNodes = sizeArray[subTreeSize]; // OJO con este valor, definir bien
-          new_block->dfuds = new_dfuds;
-          new_block->rootDepth = depthSelectedNode;
-          
+       }else {
+           treeNode selectedNode, originalSelectedNode;
+           uint16_t subTreeSize, depthSelectedNode;
+           originalSelectedNode = selectedNode = selectSubtree2(maxDepth, subTreeSize, depthSelectedNode);
+           // Ahora copio el subarbol seleccionado a un nuevo bloque
+           uint16_t *new_dfuds = (uint16_t *)calloc((sizeArray[subTreeSize]+4-1)/4, sizeof(uint16_t));
+           treeNode destNode(0,0);
+           uint16_t copiedNodes=0, copiedFlags = 0;
+           bool insertionInNewBlock = false;
+           treeNode insertionNode = node;
+           uint16_t flag, auxFlag=0, flagSelectedNode;
+           uint16_t preorderSelectedNode = absolutePosition(selectedNode);
+
+           for (flag = 0; flag < nPtrs; ++flag){
+               if (((blockPtr *)ptr)[flag].flag > preorderSelectedNode) {
+                   break;
+               }
+           }
+
+           flagSelectedNode = flag; // almacena el primer flag que es > al selected node esto es para saber despues donde poner el flag del selected node
+
+           blockPtr *new_ptr;
+
+           if (nPtrs > 0) {
+               new_ptr = (blockPtr *)malloc(sizeof(blockPtr)*nPtrs);
+           }else {
+               new_ptr = NULL;
+           }
+
+           uint16_t curFlagNewBlock; // flag en el nuevo bloque, por si la insercion continua en ese bloque
+           bool isInRoot = false;
+           uint16_t preorderDestNode = absolutePosition(destNode);
+           while (copiedNodes < subTreeSize) {
+               if (selectedNode == node) {
+                   // the original node where insertion must be carried out
+                    // is stored in the child (new) block
+                    insertionInNewBlock = true;
+                    if (destNode != treeNode(0,0)) {
+                        insertionNode = destNode; // this will be the node where insertion must be carried out in the new block
+                    }else {
+                        insertionNode = node; isInRoot = true;
+                    }
+                    curFlagNewBlock = copiedFlags;
+               }
+
+               if (ptr!=NULL && flag < nPtrs && preorderSelectedNode == ((blockPtr *)ptr)[flag].flag) {
+                   //Copiar puntero para el nuevo bloque
+                    new_ptr[auxFlag].flag = preorderDestNode;
+                    new_ptr[auxFlag].P = ((blockPtr *)ptr)[flag].P;
+                    ++flag;
+                    ++auxFlag;
+                    ++copiedFlags;
+               }
+
+               register uint64_t aux = 4*(3-selectedNode.second);
+               new_dfuds[destNode.first] = new_dfuds[destNode.first] | (((dfuds[selectedNode.first] >> aux/*4*(3-selectedNode.second)*/) & 0x000F) << 4*(3-destNode.second));
+
+               if (selectedNode != originalSelectedNode){
+                   dfuds[selectedNode.first] =  dfuds[selectedNode.first] & ~(0xF << aux/*4*(3-selectedNode.second)*/);
+               }
+               nextNode(destNode);
+               ++preorderDestNode;
+               nextNode(selectedNode);
+               ++preorderSelectedNode;
+               ++copiedNodes;
+           }
+
+           bool insertionBeforeSelectedTree = true;
+
+           if (!insertionInNewBlock && flag <= curFlag){
+               // el punto de insercion esta despues del subarbol seleccionado
+               insertionBeforeSelectedTree = false;
+           }
+
+           treeBlock *new_block = (treeBlock *)malloc(sizeof(treeBlock));
+
+           new_block->nNodes = subTreeSize;
+           new_block->maxNodes = sizeArray[subTreeSize]; // OJO con este valor, definir bien
+           new_block->dfuds = new_dfuds;
+           new_block->rootDepth = depthSelectedNode;
+
           if (auxFlag == 0) {
-             if (new_ptr != NULL) free((void *)new_ptr);
-             new_block->ptr = NULL;
-             new_block->nPtrs = 0;
-             
-             ptr = realloc(ptr, sizeof(blockPtr)*(nPtrs+1)); // there is a new pointer 
-                                                             // in the current block
-             
-             for (uint16_t i = nPtrs; i > flagSelectedNode; --i) {
-                ((blockPtr *)ptr)[i].P = ((blockPtr *)ptr)[i-1].P;
-                ((blockPtr *)ptr)[i].flag = ((blockPtr *)ptr)[i-1].flag - subTreeSize + 1;
-             }
-             
-             ((blockPtr *)ptr)[flagSelectedNode].flag = absolutePosition(originalSelectedNode);
-             
-             ((blockPtr *)ptr)[flagSelectedNode].P = new_block;  // pointer to the new child block
-             
-             nPtrs++;
+
+              if (new_ptr != NULL) {
+                  free((void *)new_ptr);
+              }
+              new_block->ptr = NULL;
+              new_block->nPtrs = 0;
+
+              ptr = realloc(ptr, sizeof(blockPtr)*(nPtrs+1)); // there is a new pointer in the current block
+
+              for (uint16_t i = nPtrs; i > flagSelectedNode; --i) {
+                  ((blockPtr *)ptr)[i].P = ((blockPtr *)ptr)[i-1].P;
+                  ((blockPtr *)ptr)[i].flag = ((blockPtr *)ptr)[i-1].flag - subTreeSize + 1;
+              }
+
+              ((blockPtr *)ptr)[flagSelectedNode].flag = absolutePosition(originalSelectedNode);
+              ((blockPtr *)ptr)[flagSelectedNode].P = new_block;  // pointer to the new child block
+
+              nPtrs++;
+
+          }else{
+              new_ptr = (blockPtr *)realloc(new_ptr, sizeof(blockPtr)*auxFlag);
+              new_block->ptr = new_ptr;
+              new_block->nPtrs = auxFlag;
+              ((blockPtr *)ptr)[flagSelectedNode].flag = absolutePosition(originalSelectedNode);
+              ((blockPtr *)ptr)[flagSelectedNode].P = new_block;
+              for (uint16_t i = flagSelectedNode+1; flag < nPtrs; ++i, ++flag) {
+                  ((blockPtr *)ptr)[i].P = ((blockPtr *)ptr)[flag].P;
+                  ((blockPtr *)ptr)[i].flag = ((blockPtr *)ptr)[flag].flag - subTreeSize + 1;
+              }
+              nPtrs = nPtrs - copiedFlags + 1;
+              ptr = realloc(ptr, sizeof(blockPtr)*nPtrs); // reajusta tamaño de arreglo de punteros
           }
-          else {
-             new_ptr = (blockPtr *)realloc(new_ptr, sizeof(blockPtr)*auxFlag);
-          
-             new_block->ptr = new_ptr; 
-    
-             new_block->nPtrs = auxFlag;
-             
-             ((blockPtr *)ptr)[flagSelectedNode].flag = absolutePosition(originalSelectedNode);
-             
-             ((blockPtr *)ptr)[flagSelectedNode].P = new_block;
-            
-             for (uint16_t i = flagSelectedNode+1; flag < nPtrs; ++i, ++flag) {
-                ((blockPtr *)ptr)[i].P = ((blockPtr *)ptr)[flag].P;
-                ((blockPtr *)ptr)[i].flag = ((blockPtr *)ptr)[flag].flag - subTreeSize + 1;
-             }
-             
-             nPtrs = nPtrs - copiedFlags + 1;
-             ptr = realloc(ptr, sizeof(blockPtr)*nPtrs); // reajusta tamaño de arreglo de punteros 
-          }   
-       
+
           // Ahora hay que borrar el subarbol copiado al hijo
           flag = flagSelectedNode+1;
-          
           nextNode(originalSelectedNode);
-          
           preorderSelectedNode = absolutePosition(selectedNode);
-                   
-          
-          while (preorderSelectedNode/*absolutePosition(selectedNode)*/ < nNodes) {
-             register uint64_t auxOriginalS = 4*(3-originalSelectedNode.second);
-             register uint64_t auxS = 4*(3-selectedNode.second);             
-             
-             dfuds[originalSelectedNode.first] =  dfuds[originalSelectedNode.first]
-                                    & ~(0xF << auxOriginalS/*4*(3-originalSelectedNode.second)*/); 
-                                    
-             dfuds[originalSelectedNode.first] = dfuds[originalSelectedNode.first] 
-                                       | (((dfuds[selectedNode.first] >> auxS/*4*(3-selectedNode.second)*/)
-                                       & 0x000F) << auxOriginalS /*4*(3-originalSelectedNode.second)*/);  
 
-             dfuds[selectedNode.first] =  dfuds[selectedNode.first]
-                                    & ~(0xF << auxS/*4*(3-selectedNode.second)*/);             
-            
-            if (selectedNode == node) insertionNode = originalSelectedNode; 
-            
-            nextNode(selectedNode);
-            nextNode(originalSelectedNode);
-            ++preorderSelectedNode;
+          while (preorderSelectedNode/*absolutePosition(selectedNode)*/ < nNodes) {
+              register uint64_t auxOriginalS = 4*(3-originalSelectedNode.second);
+              register uint64_t auxS = 4*(3-selectedNode.second);
+
+              dfuds[originalSelectedNode.first] =  dfuds[originalSelectedNode.first] & ~(0xF << auxOriginalS/*4*(3-originalSelectedNode.second)*/);
+
+             dfuds[originalSelectedNode.first] = dfuds[originalSelectedNode.first] | (((dfuds[selectedNode.first] >> auxS/*4*(3-selectedNode.second)*/) & 0x000F) << auxOriginalS /*4*(3-originalSelectedNode.second)*/);
+             dfuds[selectedNode.first] =  dfuds[selectedNode.first] & ~(0xF << auxS/*4*(3-selectedNode.second)*/);
+
+             if (selectedNode == node) {
+                 insertionNode = originalSelectedNode;
+             }
+
+             nextNode(selectedNode);
+             nextNode(originalSelectedNode);
+             ++preorderSelectedNode;
           }
-           
-          if (subTreeSize > length)         
-             shrink(subTreeSize-1-length+1);
-          else           
-             shrink(subTreeSize-1);
-          nNodes -= (subTreeSize - 1); 
-          
-          if (!insertionBeforeSelectedTree)
-             curFlag -= copiedFlags;          
-          
-          if (insertionInNewBlock) { 
-             // insertion continues in the new block              
-            if (isInRoot)
-               insert(insertionNode, str, length, level, maxDepth, curFlag);           
-            else              
-               new_block->insert(insertionNode, str, length, level, maxDepth, curFlagNewBlock);
-          }          
-          else
-             // insertion continues in the original block
-             insert(insertionNode, str, length, level, maxDepth, curFlag);
-       }         
+
+          if (subTreeSize > length) {
+              shrink(subTreeSize - 1 - length + 1);
+          }else {
+              shrink(subTreeSize - 1);
+          }
+
+          nNodes -= (subTreeSize - 1);
+
+          if (!insertionBeforeSelectedTree) {
+              curFlag -= copiedFlags;
+          }
+
+          if (insertionInNewBlock) {
+              // insertion continues in the new block
+              if (isInRoot) {
+                  insert(insertionNode, str, length, level, maxDepth, curFlag);
+              }else{
+                  new_block->insert(insertionNode, str, length, level, maxDepth, curFlagNewBlock);
+              }
+          }else{
+              // insertion continues in the original block
+              insert(insertionNode, str, length, level, maxDepth, curFlag);
+          }
+       }
     }
  }
 
