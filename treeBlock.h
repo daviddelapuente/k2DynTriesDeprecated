@@ -212,15 +212,7 @@ const int8_t insertT[16][4] = {
 const int8_t symbol2NodeT[4] = {0x8,0x4,0x2,0x1};
 
 
-
-
-
-//todo: ver que hace el resto de las tablas
-
-
-
-
-
+//todo: estas tablas creo qe no se usan
 
 
 /* Table used for insertion. Represents the DFUDS patterns using nibbles
