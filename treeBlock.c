@@ -109,7 +109,7 @@ uint16_t depthVector[4096];
 
 //todo: elimine selectSubtree
 
-//return a treeNode where the subtree begin (the end is in subTreeSize
+//return a treeNode where the subtree begin (the end is in subTreeSize)
 treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, uint16_t & depthSelectN){
 
     // depth is the depth of the root of the block
@@ -687,7 +687,7 @@ treeBlock *treeBlock::getPointer(uint16_t curFlag){
 //todo: qe hace ?
 int8_t stack[100];
 
-//takes me to the position in dfuds, where is the child of the node with symbol
+//takes me to the position in dfuds, where is the child of the node with symbol (this function is a wrapper of skipChildrenSubtree but identificate when a child is in the block or in a child block)
 treeNode treeBlock::skipChildrenSubtree(treeNode &node, uint8_t symbol, uint16_t &curLevel,uint16_t maxLevel, uint16_t &curFlag){
 
     //cant skip childs if you are at the max level
@@ -990,7 +990,7 @@ bool isEdgeTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth) {
 //tnumber of blocks and number of nodes
 uint64_t totalBlocks = 0, totalNodes = 0;
 
-//this function calculate the size of the whole tree (but only considering the treeBlocks)
+//this function calculate the size of the whole tree
 uint64_t treeBlock::size(){
 
     //for each block we increment the number of blocks and sum its nodes
