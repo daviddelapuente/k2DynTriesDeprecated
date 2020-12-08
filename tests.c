@@ -4,6 +4,10 @@
 void pf(uint16_t u){
     printf("%u\n",u);
 }
+
+
+//test tables
+
 void testShiftTTable(){
     assert(shiftT[0]==12);
     assert(shiftT[1]==8);
@@ -122,6 +126,11 @@ void testTables(){
     testSymbol2NodeT();
 }
 
+
+
+
+
+//test treeNode functions
 void testAbsolutePosition(){
     treeNode tn;
     tn.first=0;
@@ -183,6 +192,11 @@ void testTreeNode(){
     testPrevNode();
 }
 
+
+
+
+
+//test for tree block
 void testTreeBlockGrow(){
     //first we create an array of sizes
     double alpha = 0.99;
@@ -243,10 +257,183 @@ void testTreeBlockShrink(){
     }
 }
 
+//in this test we only focus on the first levels
+void testInsertTrie(){
+    trieNode *t = (trieNode *) malloc(sizeof(trieNode));
+    t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
+    t->block = NULL;
+
+    double alpha = 0.99;
+    N1 = 4;
+    Nt = S3;
+    sizeArray = (uint16_t *) malloc(sizeof(uint16_t)*(Nt+1));
+    for (int i = 0; i <= Nt; ++i) {
+        if (i > N1) N1 = 4*(((uint16_t)ceil((double)N1/alpha)+3)/4);
+        sizeArray[i] = N1;
+    }
+
+    uint64_t n, n1, nEdges;
+    uint8_t str[50];
+
+    int scanCode;
+    FILE* ptr = fopen("testGraphs/exampleGraph1.txt","r");
+
+    if (ptr==NULL){
+        printf("no such file.");
+        assert(1==0);
+    }
+
+    scanCode=fscanf(ptr,"%lu %lu %lu\n", &n, &n1, &nEdges);
+    for (uint64_t i = 0; i < nEdges; ++i) {
+        scanCode=fscanf(ptr,"%s\n", str);
+        for (uint8_t j = 0; j < 23; ++j) {
+            switch (str[j]) {
+                case '0':
+                    str[j] = 0;
+                    break;
+                case '1':
+                    str[j] = 1;
+                    break;
+                case '2':
+                    str[j] = 2;
+                    break;
+                case '3':
+                    str[j] = 3;
+                    break;
+            }
+        }
+
+        insertTrie(t, str, 23, 22);
+    }
+
+
+    trieNode *tAux1=t;
+    //first level
+    assert(tAux1->children[0]==NULL);
+    assert(tAux1->children[1]!=NULL);
+    assert(tAux1->children[2]==NULL);
+    assert(tAux1->children[3]==NULL);
+    assert(tAux1->block==NULL);
+
+
+    //second level, notice that here we have to childrens, so from now we will test both childrens (in BFS)
+    tAux1=tAux1->children[1];
+    assert(tAux1->children[0]!=NULL);
+    assert(tAux1->children[1]!=NULL);
+    assert(tAux1->children[2]==NULL);
+    assert(tAux1->children[3]==NULL);
+    assert(tAux1->block==NULL);
+
+    trieNode *tAux2=t;
+    tAux2=tAux1->children[1];
+
+    //3 level
+    tAux1=tAux1->children[0];
+    assert(tAux1->children[0]!=NULL);
+    assert(tAux1->children[1]==NULL);
+    assert(tAux1->children[2]==NULL);
+    assert(tAux1->children[3]==NULL);
+    assert(tAux1->block==NULL);
+
+    assert(tAux2->children[0]!=NULL);
+    assert(tAux2->children[1]==NULL);
+    assert(tAux2->children[2]==NULL);
+    assert(tAux2->children[3]==NULL);
+    assert(tAux2->block==NULL);
+
+    //4 level
+    tAux1=tAux1->children[0];
+    assert(tAux1->children[0]!=NULL);
+    assert(tAux1->children[1]==NULL);
+    assert(tAux1->children[2]==NULL);
+    assert(tAux1->children[3]==NULL);
+    assert(tAux1->block==NULL);
+
+    tAux2=tAux2->children[0];
+    assert(tAux2->children[0]!=NULL);
+    assert(tAux2->children[1]==NULL);
+    assert(tAux2->children[2]==NULL);
+    assert(tAux2->children[3]==NULL);
+    assert(tAux2->block==NULL);
+
+    //5 level
+    tAux1=tAux1->children[0];
+    assert(tAux1->children[0]!=NULL);
+    assert(tAux1->children[1]==NULL);
+    assert(tAux1->children[2]==NULL);
+    assert(tAux1->children[3]==NULL);
+    assert(tAux1->block==NULL);
+
+    tAux2=tAux2->children[0];
+    assert(tAux2->children[0]!=NULL);
+    assert(tAux2->children[1]==NULL);
+    assert(tAux2->children[2]==NULL);
+    assert(tAux2->children[3]==NULL);
+    assert(tAux2->block==NULL);
+
+    //6 level
+    tAux1=tAux1->children[0];
+    assert(tAux1->children[0]==NULL);
+    assert(tAux1->children[1]!=NULL);
+    assert(tAux1->children[2]==NULL);
+    assert(tAux1->children[3]==NULL);
+    assert(tAux1->block==NULL);
+
+    tAux2=tAux2->children[0];
+    assert(tAux2->children[0]==NULL);
+    assert(tAux2->children[1]==NULL);
+    assert(tAux2->children[2]!=NULL);
+    assert(tAux2->children[3]==NULL);
+    assert(tAux2->block==NULL);
+
+    //7 level
+    tAux1=tAux1->children[1];
+    assert(tAux1->children[0]!=NULL);
+    assert(tAux1->children[1]==NULL);
+    assert(tAux1->children[2]==NULL);
+    assert(tAux1->children[3]==NULL);
+    assert(tAux1->block==NULL);
+
+    tAux2=tAux2->children[2];
+    assert(tAux2->children[0]!=NULL);
+    assert(tAux2->children[1]==NULL);
+    assert(tAux2->children[2]==NULL);
+    assert(tAux2->children[3]==NULL);
+    assert(tAux2->block==NULL);
+
+    //8 level
+    tAux1=tAux1->children[0];
+    assert(tAux1->children[0]!=NULL);
+    assert(tAux1->children[1]==NULL);
+    assert(tAux1->children[2]==NULL);
+    assert(tAux1->children[3]==NULL);
+    assert(tAux1->block==NULL);
+
+    tAux2=tAux2->children[0];
+    assert(tAux2->children[0]!=NULL);
+    assert(tAux2->children[1]==NULL);
+    assert(tAux2->children[2]==NULL);
+    assert(tAux2->children[3]==NULL);
+    assert(tAux2->block==NULL);
+
+}
+
+//todo:
+void testSelectSubtree2(){
+
+}
+
 void testTreeBlock(){
     testTreeBlockGrow();
     testTreeBlockShrink();
+
+    testInsertTrie();
+    testSelectSubtree2();
 }
+
+
+
+
 
 int main(){
     testTables();

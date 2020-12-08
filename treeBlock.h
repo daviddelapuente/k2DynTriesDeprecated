@@ -114,6 +114,38 @@ typedef struct
 
 
 
+//todo: estas estructuras podrian estar cada una en su propio archivo
+//struct to retrieve some data of the nodes
+struct nodeInfo{
+    //preorder: give the preorder of the node in the topology
+    uint16_t preorder;
+    //give the number of children the node have from 1 to 4
+    uint16_t nChildren;
+    //constructors
+    nodeInfo() {};
+    nodeInfo(uint16_t _preorder, uint16_t _nChildren){
+        preorder = _preorder;
+        nChildren = _nChildren;
+    };
+};
+
+
+//struct to retrieve some data of the subtrees of a node
+struct subtreeInfo{
+    //the preorder of a subtree
+    uint16_t preorder;
+    //the size of the subtree
+    uint16_t subtreeSize;
+    //constructors
+    subtreeInfo() {};
+    subtreeInfo(uint16_t _preorder, uint16_t _subtreeSize){
+        preorder = _preorder;
+        subtreeSize = _subtreeSize;
+    };
+};
+
+
+
 
 
 

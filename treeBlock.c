@@ -26,36 +26,6 @@ inline void prevNode(treeNode &node){
     node.second = (node.second-1) & 0x3;
 }
 
-//todo: crear tests de esta estrucutura cuando sepas lo que hace
-//struct to retreive some data of the nodes
-struct nodeInfo{
-    //preorder: give the preorder of the node in the topology
-    uint16_t preorder;
-    //give the number of children the node have from 1 to 4
-    uint16_t nChildren;
-    //constructors
-    nodeInfo() {};
-    nodeInfo(uint16_t _preorder, uint16_t _nChildren){
-        preorder = _preorder;
-        nChildren = _nChildren;
-    };
-};
-
-//todo: crear tests de esta estructura cuando sepas lo que hace
-//struct to rereive some data of the subtrees of a node
-struct subtreeInfo{
-    //the preorder of a subtree
-    uint16_t preorder;
-    //the size of the subtree
-    uint16_t subtreeSize;
-    //constructors
-    subtreeInfo() {};
-    subtreeInfo(uint16_t _preorder, uint16_t _subtreeSize){
-        preorder = _preorder;
-        subtreeSize = _subtreeSize;
-    };
-};
-
 
 
 
@@ -64,7 +34,7 @@ struct subtreeInfo{
 This is a recursive function. first we free the dfuds.
 and then recursively we free the children blocks, finally
 we free the array with the children pointers and this*/
-//todo: testear esto
+//todo: como testear esto?
 void treeBlock::freeTreeBlock(){
     free((void *)dfuds);
     for (uint16_t i = 0; i < nPtrs; ++i){
@@ -77,7 +47,7 @@ void treeBlock::freeTreeBlock(){
 /*this method, realloc dfuds in a bigger array
 the idea is that the new size of the block should be sizeArray[nNodes+extraNodes]
 remember that sizeArray is an array of max sizes per blocks.*/
-//todo: testear esto, pq ese + 3 / 4?
+//todo: pq ese + 3 / 4?
 void treeBlock::grow(uint16_t extraNodes){
      dfuds = (uint16_t *) realloc(dfuds, sizeof(uint16_t)*((sizeArray[nNodes+extraNodes] + 3)/4));
      //the new max is sizeArray[nNodes+extraNodes]
@@ -87,7 +57,7 @@ void treeBlock::grow(uint16_t extraNodes){
 /*this method, realloc dfuds in a smaller array
 the idea is that the new size of the block should be sizeArray[nNodes-extraNodes]
 remember that sizeArray is an array of max sizes per blocks.*/
-//todo: testear esto, pq ese + 3/4?
+//todo: pq ese + 3/4?
 void treeBlock::shrink(uint16_t deletedNodes){
     dfuds = (uint16_t *) realloc(dfuds, sizeof(uint16_t)*((sizeArray[nNodes-deletedNodes] + 3)/4));
     //the new max is sizeArray[nNodes+extraNodes]
@@ -115,7 +85,7 @@ treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, ui
     // depth is the depth of the root of the block
     uint16_t depth= rootDepth + 1;
 
-    //curFlago=0 means that we are in the first fronteir node
+    //curFlag=0 means that we are in the first fronteir node
     uint16_t curFlag = 0;
     //initialize a nextFlag
     int32_t nextFlag;
@@ -145,7 +115,7 @@ treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, ui
 
             //go to the next fronteir node
             ++curFlag;
-            //if we run out of fronteir nodes, we set nextFlag to -1 to distinguis it
+            //if we run out of fronteir nodes, we set nextFlag to -1 to distinguish it
             if (nPtrs == 0 || curFlag >= nPtrs){
                 nextFlag = -1;
             }else{
