@@ -866,7 +866,7 @@ void insertTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
 
     //border case: we have that t (with i>L) is null (because that block was create recently)
     // this always pass when the previous while stop when i=L1
-    treeBlock *p;
+    treeBlock *p;p = (treeBlock *) t->block;
     if (t->block == NULL) {
         //we create the treeBlock
         t->block = malloc(sizeof(treeBlock));
@@ -1014,7 +1014,7 @@ uint64_t sizeTrie(trieNode *t){
 
 //todo: this should be of size L1
 //this stack will contain the first L1 nodes from the path we want to delete
-trieNode delTrieNodeStack[4096];
+trieNode* delTrieNodeStack[4096];
 uint8_t delPathStack[4096];
 //this index will tell us in wich part of the stack we should insert.
 int delTrieNodeIndex=0;
@@ -1059,15 +1059,16 @@ void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
 
     //we call "borrar", that delete the remaining path str[i...length(str)} in treeBlocks
     //todo: crear borrar
-    bool continueDelete=borrar(p, &str[i], length-i, i, maxDepth);
-
+    //bool continueDelete=borrar(p, &str[i], length-i, i, maxDepth);
+    bool continueDelete=true;
     if(continueDelete){
         //if continueDelete is true, that means that we should check the delTrieNodeStack to continue deleting until the path is forked
         //get the last trieNode in the stack
         trieNode *taux=delTrieNodeStack[delTrieNodeIndex];
 
         //the last trieNode has null childs but not null block, so if continueDelete is true, that means that the block is now null
-        taux->block.freeTreeBlock();
+        //todo: free this
+        //taux->block->freeTreeBlock();
         taux->block=NULL;
 
         //now go to the next trieNode and delete the last one
