@@ -34,7 +34,7 @@ inline void prevNode(treeNode &node){
 This is a recursive function. first we free the dfuds.
 and then recursively we free the children blocks, finally
 we free the array with the children pointers and this*/
-//todo: como testear esto?
+//todo: cuando se usa, me refiero a que la primera capa trieNode tambien deberia tener una funcion que borre para llamar a es??? como testear??
 void treeBlock::freeTreeBlock(){
     free((void *)dfuds);
     for (uint16_t i = 0; i < nPtrs; ++i){
@@ -1008,3 +1008,96 @@ uint64_t sizeTrie(trieNode *t){
     //return the total sum
   	return totalSize;
 }
+
+
+/*here goes the deletion part*/
+
+//todo: this should be of size L1
+//this stack will contain the first L1 nodes from the path we want to delete
+trieNode delTrieNodeStack[4096];
+uint8_t delPathStack[4096];
+//this index will tell us in wich part of the stack we should insert.
+int delTrieNodeIndex=0;
+
+/*this will delete the path of the node
+ first we insert the trie nodes on the stack. and trigger "borrar" that will delete
+ the nodes in a bottom up strategy*/
+void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
+
+    //insert t in the stack
+    delTrieNodeStack[delTrieNodeIndex]=t;
+
+    //this will consume the string inserting the nodes of the path in the stack
+    //if a node does not exist, that means that the path does not exist so we return
+    uint64_t i ;
+    for(i=0;i<L1;i++){
+        if (t->children[str[i]]){
+            //add the trieNode to the stack
+            delPathStack[i]=str[i];
+            delTrieNodeIndex++;
+            delTrieNodeStack[delTrieNodeIndex]=t->children[str[i]];
+
+            t=t->children[str[i]];
+        }else{
+            //the path does not exist, so there is nothing to delete
+            delTrieNodeIndex=0;
+            return;
+        }
+    }
+
+
+    //if t->block==NULL that means that the path does not exist
+    treeBlock *p;
+    if (t->block == NULL) {
+        //the path does not exist, so there is nothing to delete
+        delTrieNodeIndex=0;
+        return;
+    }else{
+        //if the block exist, we assign it to p
+        p = (treeBlock *) t->block;
+    }
+
+    //we call "borrar", that delete the remaining path str[i...length(str)} in treeBlocks
+    //todo: crear borrar
+    bool continueDelete=borrar(p, &str[i], length-i, i, maxDepth);
+
+    if(continueDelete){
+        //if continueDelete is true, that means that we should check the delTrieNodeStack to continue deleting until the path is forked
+        //get the last trieNode in the stack
+        trieNode *taux=delTrieNodeStack[delTrieNodeIndex];
+
+        //the last trieNode has null childs but not null block, so if continueDelete is true, that means that the block is now null
+        taux->block.freeTreeBlock();
+        taux->block=NULL;
+
+        //now go to the next trieNode and delete the last one
+        delTrieNodeIndex--;
+        taux=delTrieNodeStack[delTrieNodeIndex];
+
+
+        while(delTrieNodeIndex>0){
+            //todo:quizas hay que hacer un free para esa estructura tambien
+            taux->children[delPathStack[delTrieNodeIndex]]=NULL;
+
+            if( taux->children[0]==NULL && taux->children[1]==NULL && taux->children[2]==NULL && taux->children[3]==NULL ){
+                delTrieNodeIndex--;
+                taux=delTrieNodeStack[delTrieNodeIndex];
+            }else{
+                delTrieNodeIndex=0;
+                return;
+            }
+
+        }
+
+        //todo: si implementqamos un free para trieNode, faltaria poner un free aca para delTrieNodeStack[0]
+        return;
+
+    }else{
+        //if continueDelete is false, that means that this part of the path is still in use
+        delTrieNodeIndex=0;
+        return;
+    }
+    return;
+
+}
+

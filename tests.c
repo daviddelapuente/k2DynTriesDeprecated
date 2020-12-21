@@ -418,6 +418,10 @@ void testInsertTrie(){
 
 }
 
+void testInsert(){
+
+}
+
 //todo:
 void testSelectSubtree2(){
 
@@ -428,6 +432,7 @@ void testTreeBlock(){
     testTreeBlockShrink();
 
     testInsertTrie();
+    testInsert();
     testSelectSubtree2();
 }
 
