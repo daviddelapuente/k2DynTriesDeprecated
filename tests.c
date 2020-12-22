@@ -257,6 +257,8 @@ void testTreeBlockShrink(){
     }
 }
 
+//todo: si se inserta un camino que ya esta, se cae el programa
+
 //in this test we only focus on the first levels
 void testInsertTrie(){
     trieNode *t = (trieNode *) malloc(sizeof(trieNode));
@@ -428,6 +430,136 @@ void testSelectSubtree2(){
 
 }
 
+void testDeleteTrieNode(){
+
+    trieNode *t = (trieNode *) malloc(sizeof(trieNode));
+    t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
+    t->block = NULL;
+
+    double alpha = 0.99;
+    N1 = 4;
+    Nt = S3;
+    sizeArray = (uint16_t *) malloc(sizeof(uint16_t)*(Nt+1));
+    for (int i = 0; i <= Nt; ++i) {
+        if (i > N1) N1 = 4*(((uint16_t)ceil((double)N1/alpha)+3)/4);
+        sizeArray[i] = N1;
+    }
+
+    uint64_t n, n1;
+    n=7414866;
+    n1=7414866;
+
+    uint8_t path0[50]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    insertTrie(t, path0, 23, 22);
+    assert(isEdgeTrie(t,path0,23,22));
+    deleteTrie(t,path0,23,22);
+    assert(!isEdgeTrie(t,path0,23,22));
+
+
+    uint8_t path1[50]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
+    uint8_t path2[50]={1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
+    uint8_t path3[50]={2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
+    uint8_t path4[50]={3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
+
+    uint8_t path5[50]={3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    uint8_t path6[50]={3,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    uint8_t path7[50]={3,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    uint8_t path8[50]={3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+    uint8_t path9[50]={2,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
+    uint8_t path10[50]={2,3,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
+    uint8_t path11[50]={2,3,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
+    uint8_t path12[50]={2,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
+
+
+    insertTrie(t, path1, 23, 22);
+    insertTrie(t, path2, 23, 22);
+    insertTrie(t, path3, 23, 22);
+    insertTrie(t, path4, 23, 22);
+
+    insertTrie(t, path5, 23, 22);
+    insertTrie(t, path6, 23, 22);
+    insertTrie(t, path7, 23, 22);
+    insertTrie(t, path8, 23, 22);
+
+    insertTrie(t, path9, 23, 22);
+    insertTrie(t, path10, 23, 22);
+    insertTrie(t, path11, 23, 22);
+    insertTrie(t, path12, 23, 22);
+
+    assert(isEdgeTrie(t,path1,23,22));
+    assert(isEdgeTrie(t,path2,23,22));
+    assert(isEdgeTrie(t,path3,23,22));
+    assert(isEdgeTrie(t,path4,23,22));
+    assert(isEdgeTrie(t,path5,23,22));
+    assert(isEdgeTrie(t,path6,23,22));
+    assert(isEdgeTrie(t,path7,23,22));
+    assert(isEdgeTrie(t,path8,23,22));
+    assert(isEdgeTrie(t,path9,23,22));
+    assert(isEdgeTrie(t,path10,23,22));
+    assert(isEdgeTrie(t,path11,23,22));
+    assert(isEdgeTrie(t,path12,23,22));
+
+    deleteTrie(t,path1,23,22);
+    assert(!isEdgeTrie(t,path1,23,22));
+    assert(isEdgeTrie(t,path2,23,22));
+    assert(isEdgeTrie(t,path3,23,22));
+    assert(isEdgeTrie(t,path4,23,22));
+    assert(isEdgeTrie(t,path5,23,22));
+    assert(isEdgeTrie(t,path6,23,22));
+    assert(isEdgeTrie(t,path7,23,22));
+    assert(isEdgeTrie(t,path8,23,22));
+    assert(isEdgeTrie(t,path9,23,22));
+    assert(isEdgeTrie(t,path10,23,22));
+    assert(isEdgeTrie(t,path11,23,22));
+    assert(isEdgeTrie(t,path12,23,22));
+
+    deleteTrie(t,path2,23,22);
+    assert(!isEdgeTrie(t,path1,23,22));
+    assert(!isEdgeTrie(t,path2,23,22));
+    assert(isEdgeTrie(t,path3,23,22));
+    assert(isEdgeTrie(t,path4,23,22));
+    assert(isEdgeTrie(t,path5,23,22));
+    assert(isEdgeTrie(t,path6,23,22));
+    assert(isEdgeTrie(t,path7,23,22));
+    assert(isEdgeTrie(t,path8,23,22));
+    assert(isEdgeTrie(t,path9,23,22));
+    assert(isEdgeTrie(t,path10,23,22));
+    assert(isEdgeTrie(t,path11,23,22));
+    assert(isEdgeTrie(t,path12,23,22));
+
+    deleteTrie(t,path3,23,22);
+    assert(!isEdgeTrie(t,path1,23,22));
+    assert(!isEdgeTrie(t,path2,23,22));
+    assert(!isEdgeTrie(t,path3,23,22));
+    assert(isEdgeTrie(t,path4,23,22));
+    assert(isEdgeTrie(t,path5,23,22));
+    assert(isEdgeTrie(t,path6,23,22));
+    assert(isEdgeTrie(t,path7,23,22));
+    assert(isEdgeTrie(t,path8,23,22));
+    assert(isEdgeTrie(t,path9,23,22));
+    assert(isEdgeTrie(t,path10,23,22));
+    assert(isEdgeTrie(t,path11,23,22));
+    assert(isEdgeTrie(t,path12,23,22));
+
+    deleteTrie(t,path4,23,22);
+    assert(!isEdgeTrie(t,path1,23,22));
+    assert(!isEdgeTrie(t,path2,23,22));
+    assert(!isEdgeTrie(t,path3,23,22));
+    assert(!isEdgeTrie(t,path4,23,22));
+    assert(isEdgeTrie(t,path5,23,22));
+    assert(isEdgeTrie(t,path6,23,22));
+    assert(isEdgeTrie(t,path7,23,22));
+    assert(isEdgeTrie(t,path8,23,22));
+    assert(isEdgeTrie(t,path9,23,22));
+    assert(isEdgeTrie(t,path10,23,22));
+    assert(isEdgeTrie(t,path11,23,22));
+    assert(isEdgeTrie(t,path12,23,22));
+
+
+
+}
+
 void testTreeBlock(){
     testTreeBlockGrow();
     testTreeBlockShrink();
@@ -435,6 +567,8 @@ void testTreeBlock(){
     testInsertTrie();
     testInsert();
     testSelectSubtree2();
+
+    testDeleteTrieNode();
 }
 
 
