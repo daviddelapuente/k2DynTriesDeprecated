@@ -1015,6 +1015,8 @@ uint64_t sizeTrie(trieNode *t){
 //todo: this should be of size L1
 //this stack will contain the first L1 nodes from the path we want to delete
 trieNode* delTrieNodeStack[4096];
+//this stack will contain the step the path take in each node (this means it has numbers from 0 to 3)
+//in other words delPathStack[i] contain the character for the path of node delTrieNodeStack[i] (corresponding to delTrieNodeStack[i+1])
 uint8_t delPathStack[4096];
 //this index will tell us in wich part of the stack we should insert.
 int delTrieNodeIndex=0;
@@ -1032,11 +1034,13 @@ void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
     uint64_t i ;
     for(i=0;i<L1;i++){
         if (t->children[str[i]]){
-            //add the trieNode to the stack
+            //add the char to the char stack
             delPathStack[i]=str[i];
+            //we actualize delTrieNodeIndex because there is an offset of 1 between delPathStack and delTrieNodeStack
             delTrieNodeIndex++;
+            //add the trieNode to the stack
             delTrieNodeStack[delTrieNodeIndex]=t->children[str[i]];
-
+            //go to next node
             t=t->children[str[i]];
         }else{
             //the path does not exist, so there is nothing to delete
@@ -1068,22 +1072,25 @@ void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
 
         //the last trieNode has null childs but not null block, so if continueDelete is true, that means that the block is now null
         //todo: free this
-        //taux->block->freeTreeBlock();
+        treeBlock *paux=(treeBlock *) taux->block;
+        paux->freeTreeBlock();
         taux->block=NULL;
 
         //now go to the next trieNode and delete the last one
         delTrieNodeIndex--;
         taux=delTrieNodeStack[delTrieNodeIndex];
 
-
+        //delete all the trieNodes of the stack till the path fork
         while(delTrieNodeIndex>0){
             //todo:quizas hay que hacer un free para esa estructura tambien
             taux->children[delPathStack[delTrieNodeIndex]]=NULL;
 
+            //this tell us if the path is not forked
             if( taux->children[0]==NULL && taux->children[1]==NULL && taux->children[2]==NULL && taux->children[3]==NULL ){
                 delTrieNodeIndex--;
                 taux=delTrieNodeStack[delTrieNodeIndex];
             }else{
+                //the path is forked, so we stop
                 delTrieNodeIndex=0;
                 return;
             }
