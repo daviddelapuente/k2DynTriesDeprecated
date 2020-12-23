@@ -1012,6 +1012,91 @@ uint64_t sizeTrie(trieNode *t){
 
 /*here goes the deletion part*/
 
+treeNode delTreeNodeStack[4096];
+uint8_t delTreePathStack[4096];
+int delTreeNodeIndex=0;
+
+uint8_t nodesInBlockStack[4096];
+treeBlock* delBlockStack[4096];
+int delBlockNodeIndex=0;
+
+bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth){
+    //like in deleteTrieNode, in the first part we insert nodes in the stack, so first we fill path stack
+
+    //curBlock is pointing to the root because we will start in that point. curBlockAux is a pointer we will use to decend the tree
+    treeBlock *curBlock = root, *curBlockAux;
+    //set a dummy treeNode, and an aux pointer to descend the tree
+    treeNode curNode(0,0), curNodeAux;
+    //dummy flag
+    uint16_t curFlag = 0;
+
+    delTreeNodeStack[delTreeNodeIndex]=curNode;
+    delBlockStack[delBlockNodeIndex]=curBlock;
+    nodesInBlockStack[delBlockNodeIndex]=1;
+
+
+
+    //traverse the string (the path) until we reach the final node or we dont find a path
+    uint64_t i;
+    for (i = 0; i < length; ++i) {
+
+        delTreePathStack[delTreeNodeIndex]=str[i];
+        //we get the child using the morton code char (str[i])
+        curBlockAux = curBlock;
+        curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
+
+
+        //if the child function returned a treeNode with a -1, that means that the path does not exist. so we break here.
+        if (curNodeAux.first == (NODE_TYPE)-1) {
+            //reset the indexes
+            delTreeNodeIndex=0;
+            delBlockNodeIndex=0;
+            return false;
+
+        }
+        else {
+            //else, we update the curNode
+            curNode = curNodeAux;
+            delTreeNodeIndex++;
+            delTreeNodeStack[delTreeNodeIndex]=curNode;
+            nodesInBlockStack[delBlockNodeIndex]++;
+        }
+
+        //if we are in a fronteir node
+        //todo: make this
+        if (curBlock->nPtrs > 0 && absolutePosition(curNode) == curFlag) {
+            // we go to the block where the flag is pointing
+            curBlock = curBlock->getPointer(curFlag);
+            //and reset the treeNode (because we will start in a new block)
+            curNode.first = 0;
+            curNode.second = 0;
+
+            delBlockNodeIndex++;
+            delBlockStack[delBlockNodeIndex]=curBlock;
+
+            delTreeNodeIndex++;
+            delTreeNodeStack[delTreeNodeIndex]=curNode;
+            nodesInBlockStack[delBlockNodeIndex]=1;
+        }
+    }
+
+
+
+    //todo: no olvides para i=lenght
+
+
+
+
+
+
+
+
+
+
+    return true;
+}
+
+
 //todo: this should be of size L1
 //this stack will contain the first L1 nodes from the path we want to delete
 trieNode* delTrieNodeStack[4096];
@@ -1035,7 +1120,7 @@ void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
     for(i=0;i<L1;i++){
         if (t->children[str[i]]){
             //add the char to the char stack
-            delPathStack[i]=str[i];
+            delPathStack[delTrieNodeIndex]=str[i];
             //we actualize delTrieNodeIndex because there is an offset of 1 between delPathStack and delTrieNodeStack
             delTrieNodeIndex++;
             //add the trieNode to the stack
@@ -1062,16 +1147,14 @@ void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
     }
 
     //we call "borrar", that delete the remaining path str[i...length(str)} in treeBlocks
-    //todo: crear borrar
-    //bool continueDelete=borrar(p, &str[i], length-i, i, maxDepth);
-    bool continueDelete=true;
+    bool continueDelete=deleteBlockNodes(p, &str[i], length-i, i, maxDepth);
+
     if(continueDelete){
         //if continueDelete is true, that means that we should check the delTrieNodeStack to continue deleting until the path is forked
         //get the last trieNode in the stack
         trieNode *taux=delTrieNodeStack[delTrieNodeIndex];
 
         //the last trieNode has null childs but not null block, so if continueDelete is true, that means that the block is now null
-        //todo: free this
         treeBlock *paux=(treeBlock *) taux->block;
         paux->freeTreeBlock();
         taux->block=NULL;
