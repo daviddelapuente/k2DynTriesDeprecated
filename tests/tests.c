@@ -1,4 +1,4 @@
-#include "treeBlock.c"
+#include "../treeBlock.c"
 #include "assert.h"
 
 void pf(uint16_t u){
@@ -261,6 +261,8 @@ void testTreeBlockShrink(){
 
 //in this test we only focus on the first levels
 void testInsertTrie(){
+
+
     trieNode *t = (trieNode *) malloc(sizeof(trieNode));
     t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
     t->block = NULL;
@@ -274,39 +276,15 @@ void testInsertTrie(){
         sizeArray[i] = N1;
     }
 
-    uint64_t n, n1, nEdges;
-    uint8_t str[50];
+    uint64_t n, n1;
+    n=7414866;
+    n1=7414866;
 
-    int scanCode;
-    FILE* ptr = fopen("testGraphs/exampleGraph1.txt","r");
+    uint8_t path0[50]={1,0,0,0,0,1,0,0,0,0,3,0,0,0,0,0,2,3,2,0,0,0,0};
+    uint8_t path1[50]={1,1,0,0,0,2,0,0,0,0,0,3,2,0,0,0,0,0,0,2,0,0,0};
 
-    if (ptr==NULL){
-        printf("no such file.");
-        assert(1==0);
-    }
-
-    scanCode=fscanf(ptr,"%lu %lu %lu\n", &n, &n1, &nEdges);
-    for (uint64_t i = 0; i < nEdges; ++i) {
-        scanCode=fscanf(ptr,"%s\n", str);
-        for (uint8_t j = 0; j < 23; ++j) {
-            switch (str[j]) {
-                case '0':
-                    str[j] = 0;
-                    break;
-                case '1':
-                    str[j] = 1;
-                    break;
-                case '2':
-                    str[j] = 2;
-                    break;
-                case '3':
-                    str[j] = 3;
-                    break;
-            }
-        }
-
-        insertTrie(t, str, 23, 22);
-    }
+    insertTrie(t,path0 , 23, 22);
+    insertTrie(t,path1 , 23, 22);
 
 
     trieNode *tAux1=t;
@@ -689,8 +667,8 @@ void testTreeBlock(){
     testInsert();
     testSelectSubtree2();
 
-    testDeleteTrieNode();
-    testAux();
+    //testDeleteTrieNode();
+    //testAux();
 }
 
 

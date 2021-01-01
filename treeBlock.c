@@ -1063,7 +1063,6 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
         }
 
         //if we are in a fronteir node
-        //todo: make this
         if (curBlock->nPtrs > 0 && absolutePosition(curNode) == curFlag) {
             // we go to the block where the flag is pointing
             curBlock = curBlock->getPointer(curFlag);
@@ -1082,8 +1081,44 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
 
 
 
-    //todo: no olvides para i=lenght
+    //now we traverse the stack backward deleting the nodes till a path fork
 
+    //first iter for each block in the stack delBlockStack
+    for(int i=delBlockNodeIndex;i>=0;i--){
+
+        treeBlock * actualBlock=delBlockStack[delBlockNodeIndex];
+
+        //we iter for each block in each node
+        for(int j=0;j<nodesInBlockStack[delBlockNodeIndex];j++){
+
+            //get the actual char in the path (from bottom to top, dont forget it)
+            uint8_t actualChar=delTreePathStack[delTreeNodeIndex];
+            //get the actual node in the path
+            treeNode actualNode=delTreeNodeStack[delTreeNodeIndex];
+
+            //todo: now we delete the node in the block, and update the numberofnodes
+
+            uint16_t auxFirst=actualBlock->dfuds[actualNode.first];
+            auxFirst=auxFirst & delNodeInBlockT[actualNode.second][actualChar] ;
+            actualBlock->dfuds[actualNode.first]=auxFirst;
+
+
+
+            //now we want to know ho many nodes has auxFirst
+            auxFirst = (auxFirst>>shiftT[actualNode.second]) & 0x000f;
+            if(auxFirst==0){
+                //now we remove the node from dfuds
+
+                //edit the flags
+            }else{
+                //if auxFirst !=0 that means that the path was forked so we return false
+                delTreeNodeIndex=0;
+                delBlockNodeIndex=0;
+                return false;
+            }
+            delTreeNodeIndex--;
+        }
+    }
 
 
 
@@ -1191,4 +1226,16 @@ void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
     return;
 
 }
-
+#include <sys/stat.h>
+void materializeTrie(trieNode *t){
+    if(t==NULL || (t->children[0]==NULL && t->children[1]==NULL && t->children[2]==NULL && t->children[3]==NULL)){
+        printf("cant materialize empty trie\n");
+    }else{
+        printf("begin materialization\n");
+        int n;
+        FILE *fp;
+        mkdir("temp",0777);
+        fp=fopen("temp\\sample.txt", "w+");
+        fprintf(fp, "Hello World !!");
+    }
+}

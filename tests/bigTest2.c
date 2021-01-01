@@ -45,7 +45,7 @@ int main()
         sizeArray[i] = N1;
     }
 
-
+    printf("test construction\n");
 
     /*int this part we insert the nodes in the trie
     n=rows, n1=cols, nEdges=number of edges*/
@@ -55,7 +55,7 @@ int main()
     //init a clock
     clock_t start, diff=0;
     //we read the first line of the input (wich contains the number of: rows,cols,edges)
-    scanCode=scanf("%lu %lu %lu\n", &n, &n1, &nEdges);
+    scanCode=scanf("%lu %lu %lu\n", &n, &n1, &nEdges);\
     for (uint64_t i = 0; i < nEdges; ++i) {
         //we read the line containing the edge
         scanCode=scanf("%s\n", str);
@@ -73,13 +73,21 @@ int main()
                 case '3': str[j] = 3;
                     break;
             }
-        //we print each 1000000 edges
-        if (i%1000000 == 0) {printf("%lu\n", i); fflush(stdout);}
+
         //for each edge, we sum the time it cost to insert
         start = clock();
         //t=trieNode, str=mortonCode, length of str=23, maxdepth of the tree=22
         insertTrie(t, str, 23, 22);
         diff += clock() - start;
+
+        //we print each 1000000 edges
+        if (i%5000000 == 0 && i!=0) {
+            uint64_t msec = diff * 1000 / CLOCKS_PER_SEC;
+            printf(" nEdges=%lu\n",i);
+            printf("     time=%f\n",(float)msec*1000/i);
+            uint64_t treeSize = sizeTrie(t);//B.size();
+            printf("     Total size= %lu bytes\n", treeSize);
+        }
     }
 
 
@@ -96,6 +104,7 @@ int main()
     printf("Numero de nodos internos en el arbol: %lu\n", totalNodes);
 
 
+    printf("test search\n");
 
     //in this part we are going to test the searching of edges
     //re read the graph file
@@ -118,13 +127,19 @@ int main()
                 case '3': str[j] = 3;
                     break;
             }
-        //each 1000000 print an edge
-        if (i%1000000 == 0) { printf("%lu %lu\n", i, count); fflush(stdout);}
+
         start = clock();
         //return true if the edge is in the tree. t=trie pointer, str=morton code, 23=length of the morton code, 22=max level
         found = isEdgeTrie(t, str, 23, 22);//isEdge(&B, str, 23, 22);
         diff += clock() - start;
         if (found) count++;
+
+        //each 1000000 print an edge
+        if (i%1000000 == 0) {
+            uint64_t msec = diff * 1000 / CLOCKS_PER_SEC;
+            printf(" nEdges=%lu\n",i);
+            printf("     time=%f\n",(float)msec*1000/i);
+        }
     }
 
 
@@ -145,12 +160,16 @@ int main()
         //todo: que hace esto?
         str[j]++;
         //each 1000000 print an edge
-        if (i%1000000 == 0) {printf("%lu %lu\n", i, count); fflush(stdout);}
         start = clock();
         //return tre if the edge is in the tree. t=trie pointer, str=morton code, 23=length of the morton code, 22=max level
         found = isEdgeTrie(t, str, 23, 22); //isEdge(&B, str, 23, 22);
         diff += clock() - start;
         if (found) count++;
+        if (i%5000000 == 0) {
+            uint64_t msec = diff * 1000 / CLOCKS_PER_SEC;
+            printf(" nEdges=%lu\n",i);
+            printf("     time=%f\n",(float)msec*1000/i);
+        }
     }
     //print the results
     msec = diff * 1000 / CLOCKS_PER_SEC;

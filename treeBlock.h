@@ -237,6 +237,15 @@ const int8_t insertT[16][4] = {
 };
 
 
+//todo: explicar que hace
+const uint16_t delNodeInBlockT[4][4] = {
+/*xfff*/ {0x7fff, 0xbfff, 0xdfff, 0xefff},
+/*fxff*/ {0xf7ff, 0xfbff, 0xfdff, 0xfeff},
+/*ffxf*/ {0xff7f, 0xffbf, 0xffdf, 0xffef},
+/*fffx*/ {0xfff7, 0xfffb, 0xfffd, 0xfffe},
+};
+
+
 // given a symbol in {0, 1, 2, 3}, yields a unary node representing that symbol
 const int8_t symbol2NodeT[4] = {0x8,0x4,0x2,0x1};
 
