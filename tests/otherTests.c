@@ -1,4 +1,4 @@
-#include "treeBlock.c"
+#include "../materializeSuite.c"
 #include "assert.h"
 
 void testMaterializeTrie(){
@@ -19,9 +19,11 @@ void testMaterializeTrie(){
     n=7414866;
     n1=7414866;
 
-    uint8_t path0[50]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    insertTrie(t, path0, 23, 22);
-    materializeTrie(t);
+    uint8_t path1[50]={1,2,3,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    insertTrie(t, path1, 23, 22);
+
+    char srcFolder[] = "../materializeField/";
+    materializeTrie(t,srcFolder);
 }
 
 int main(){

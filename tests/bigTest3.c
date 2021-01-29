@@ -50,20 +50,7 @@ int main()
 
 
 
-    FILE *fpnEdges;
-    FILE *fpinsert;
-    FILE *fpsearch;
-    FILE *fpsize;
 
-    fpnEdges=fopen("nEdges.txt", "w");
-    fpinsert=fopen("insert.txt", "w");
-    fpsearch=fopen("search.txt", "w");
-    fpsize=fopen("size.txt", "w");
-
-    if (fpnEdges == NULL ||fpinsert==NULL || fpsearch==NULL || fpsize==NULL){
-        printf("Error opening file!\n");
-        exit(1);
-    }
 
     /*int this part we insert the nodes in the trie
     n=rows, n1=cols, nEdges=number of edges*/
@@ -107,45 +94,30 @@ int main()
 
         //we print each 1000000 edges
         if (i%5000000 == 0 && i!=0) {
-            uint64_t msec = diff * 1000 / CLOCKS_PER_SEC;
-
+            uint64_t sec = diff / CLOCKS_PER_SEC;
             printf(" nEdges=%lu\n",i);
-            fprintf(fpnEdges,"%lu,\n",i);
-
-            printf("     insertTime=%f\n",(float)msec/i);
-            fprintf(fpinsert,"%f,\n",(float)msec/i);
-
+            printf("     insertTime=%f\n",(float)sec);
             uint64_t treeSize = sizeTrie(t);
             printf("     Total size= %lu bytes\n", treeSize);
-            fprintf(fpsize,"%lu,\n",treeSize);
 
-            uint64_t msec2 = diff2 * 1000 / CLOCKS_PER_SEC;
-            printf("     searchTime=%f\n",(float)msec2/i);
-            fprintf(fpsearch,"%f,\n",(float)msec2/i);
+
+            uint64_t sec2 = diff2 / CLOCKS_PER_SEC;
+            printf("     searchTime=%f\n",(float)sec2);
         }
 
 
     }
 
-    uint64_t msec = diff * 1000 / CLOCKS_PER_SEC;
+    uint64_t sec = diff  / CLOCKS_PER_SEC;
     printf(" nEdges=%lu\n",nEdges);
-    fprintf(fpnEdges,"%lu\n",nEdges);
-
-    printf("     insertTime=%f\n",(float)msec/nEdges);
-    fprintf(fpinsert,"%f\n",(float)msec/nEdges);
-
+    printf("     insertTime=%f\n",(float)sec);
     uint64_t treeSize = sizeTrie(t);
     printf("     Total size= %lu bytes\n", treeSize);
-    fprintf(fpsize,"%lu\n",treeSize);
 
-    uint64_t msec2 = diff2 * 1000 / CLOCKS_PER_SEC;
-    printf("     searchTime=%f\n",(float)msec2/nEdges);
-    fprintf(fpsearch,"%f\n",(float)msec2/nEdges);
 
-    fclose(fpnEdges);
-    fclose(fpinsert);
-    fclose(fpsearch);
-    fclose(fpsize);
+    uint64_t sec2 = diff2 / CLOCKS_PER_SEC;
+    printf("     searchTime=%f\n",(float)sec2);
+
     return 0;
 }
 
