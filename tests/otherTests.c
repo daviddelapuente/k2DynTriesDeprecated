@@ -19,10 +19,19 @@ void testMaterializeTrie(){
     n=7414866;
     n1=7414866;
 
-    uint8_t path1[50]={1,2,3,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    insertTrie(t, path1, 23, 22);
+    long long c=0;
+
+    while(c<65536){
+
+
+        uint8_t path[30]={1,2,3,0,1,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        insertTrie(t, path, 23, 22);
+
+        c++;
+    }
 
     char srcFolder[] = "../materializeField/";
+
     materializeTrie(t,srcFolder);
 }
 
