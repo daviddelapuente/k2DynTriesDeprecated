@@ -55,10 +55,10 @@ int main()
     FILE *fpsearch;
     FILE *fpsize;
 
-    fpnEdges=fopen("nEdges.txt", "w");
-    fpinsert=fopen("insert.txt", "w");
-    fpsearch=fopen("search.txt", "w");
-    fpsize=fopen("size.txt", "w");
+    fpnEdges=fopen("./bigTest3Results/nEdges.txt", "w");
+    fpinsert=fopen("./bigTest3Results/insert.txt", "w");
+    fpsearch=fopen("./bigTest3Results/search.txt", "w");
+    fpsize=fopen("./bigTest3Results/size.txt", "w");
 
     if (fpnEdges == NULL ||fpinsert==NULL || fpsearch==NULL || fpsize==NULL){
         printf("Error opening file!\n");
