@@ -2,7 +2,7 @@
 #include "assert.h"
 
 //this function will test the materialization of a Trie
-void testMaterializeTrie(){
+void testDeletion(){
     //first we instanciate the trie
     trieNode *t = (trieNode *) malloc(sizeof(trieNode));
     t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
@@ -17,19 +17,28 @@ void testMaterializeTrie(){
     }
     //now we inert the first 65536 points (in fourth base)
     long long c=0;
-    while(c<65536){
-        uint8_t path[30]={1,2,3,0,1,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+    while(c<400){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
         insertTrie(t, path, 23, 22);
         c++;
     }
 
     //now we materialize the trie in ../materializeFie/A1
-    char srcFolder[] = "../materializeField/A1/";
+    char srcFolder[] = "../materializeField/A2/";
     materializeTrie(t,srcFolder);
+
+    c=200;
+    while(c<300){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        //uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1,2,3};
+        deleteTrie(t, path, 23, 22);
+        c++;
+    }
+
 }
 
 int main(){
-    testMaterializeTrie();
+    testDeletion();
     printf("congratulations, all test passed\n");
     return 0;
 }
