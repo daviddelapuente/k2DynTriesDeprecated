@@ -286,8 +286,8 @@ void testDeletion3(){
 
 
     int miniTests=(int) pow(2,25);
-    for(int i=0;i<500;i++){
-        printf("%u\n",i);
+    for(int i=miniTests/3;i<miniTests;i++){
+        printf("%i\n",i);
         //first we instanciate the trie
         trieNode *t = (trieNode *) malloc(sizeof(trieNode));
         t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
@@ -315,7 +315,6 @@ void testDeletion3(){
         int c=24;
         while (c>=0) {
             if (n & 1) {
-                printf("%u\n",c);
                 deleteTrie(t, paths[c], 23, 22);
             }
             n >>=1;
@@ -358,6 +357,7 @@ void testDeletion3(){
 }
 
 
+
 void testDeletion4(){
     //first we instanciate the trie
     trieNode *t = (trieNode *) malloc(sizeof(trieNode));
@@ -380,8 +380,80 @@ void testDeletion4(){
         assert(isEdgeTrie(t, paths[i], 23, 22));
     }
 
-    char srcFolder1[] = "../materializeField/A1/";
-    materializeTrie(t,srcFolder1);
+    int miniTests=(int) pow(2,25);
+    for(int i=miniTests/3;i<miniTests;i++){
+        printf("%i\n",i);
+
+
+        //delete some nodes
+
+        int n=i;
+        int c=24;
+        while (c>=0) {
+            if (n & 1) {
+                deleteTrie(t, paths[c], 23, 22);
+            }
+            n >>=1;
+            c--;
+        }
+
+        //assert all nodes
+        n=i;
+        c=24;
+        while (c>=0) {
+            if (n & 1) {
+                assert(!isEdgeTrie(t,paths[c],23,22));
+            }else{
+                assert(isEdgeTrie(t,paths[c],23,22));
+            }
+            n >>=1;
+            c--;
+        }
+
+        //insert those nodes;
+        n=i;
+        c=24;
+        while (c>=0) {
+            if (n & 1) {
+                insertTrie(t,paths[c],23,22);
+            }
+            n >>=1;
+            c--;
+        }
+        //asert all nodes
+        n=i;
+        c=24;
+        while (c>=0) {
+            assert(isEdgeTrie(t,paths[c],23,22));
+            n >>=1;
+            c--;
+        }
+
+    }
+}
+
+void testDeletionx(){
+    //first we instanciate the trie
+    trieNode *t = (trieNode *) malloc(sizeof(trieNode));
+    t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
+    t->block = NULL;
+    double alpha = 0.99;
+    N1 = 4;
+    Nt = S3;
+    sizeArray = (uint16_t *) malloc(sizeof(uint16_t)*(Nt+1));
+    for (int i = 0; i <= Nt; ++i) {
+        if (i > N1) N1 = 4*(((uint16_t)ceil((double)N1/alpha)+3)/4);
+        sizeArray[i] = N1;
+    }
+
+    for (int i=0;i<25;i++){
+        insertTrie(t, paths[i], 23, 22);
+    }
+
+    for (int i=0;i<25;i++){
+        assert(isEdgeTrie(t, paths[i], 23, 22));
+    }
+
 
     deleteTrie(t,paths[19],23,22);
     deleteTrie(t,paths[18],23,22);
@@ -390,80 +462,48 @@ void testDeletion4(){
 
     char srcFolder2[] = "../materializeField/A2/";
     materializeTrie(t,srcFolder2);
-
-    assert(isEdgeTrie(t,paths[0],23,22));
-    assert(isEdgeTrie(t,paths[1],23,22));
-    assert(isEdgeTrie(t,paths[2],23,22));
-    assert(isEdgeTrie(t,paths[3],23,22));
-    assert(isEdgeTrie(t,paths[4],23,22));
-
-    assert(isEdgeTrie(t,paths[5],23,22));
-    assert(isEdgeTrie(t,paths[6],23,22));
-    assert(isEdgeTrie(t,paths[7],23,22));
-    assert(isEdgeTrie(t,paths[8],23,22));
-    assert(isEdgeTrie(t,paths[9],23,22));
-
-    assert(isEdgeTrie(t,paths[10],23,22));
-    assert(isEdgeTrie(t,paths[11],23,22));
-    assert(isEdgeTrie(t,paths[12],23,22));
-    assert(isEdgeTrie(t,paths[13],23,22));
-    assert(isEdgeTrie(t,paths[14],23,22));
-
-    assert(isEdgeTrie(t,paths[15],23,22));
-    assert(!isEdgeTrie(t,paths[16],23,22));
-    assert(!isEdgeTrie(t,paths[17],23,22));
-    assert(!isEdgeTrie(t,paths[18],23,22));
-    assert(!isEdgeTrie(t,paths[19],23,22));
-
-    assert(isEdgeTrie(t,paths[20],23,22));
-    assert(isEdgeTrie(t,paths[21],23,22));
-    assert(isEdgeTrie(t,paths[22],23,22));
-    assert(isEdgeTrie(t,paths[23],23,22));
-    assert(isEdgeTrie(t,paths[24],23,22));
-
-    insertTrie(t,paths[23],23,22);
-    insertTrie(t,paths[22],23,22);
-    insertTrie(t,paths[21],23,22);
-    insertTrie(t,paths[20],23,22);
-
-    assert(isEdgeTrie(t,paths[0],23,22));
-    assert(isEdgeTrie(t,paths[1],23,22));
-    assert(isEdgeTrie(t,paths[2],23,22));
-    assert(isEdgeTrie(t,paths[3],23,22));
-    assert(isEdgeTrie(t,paths[4],23,22));
-
-    assert(isEdgeTrie(t,paths[5],23,22));
-    assert(isEdgeTrie(t,paths[6],23,22));
-    assert(isEdgeTrie(t,paths[7],23,22));
-    assert(isEdgeTrie(t,paths[8],23,22));
-    assert(isEdgeTrie(t,paths[9],23,22));
-
-    assert(isEdgeTrie(t,paths[10],23,22));
-    assert(isEdgeTrie(t,paths[11],23,22));
-    assert(isEdgeTrie(t,paths[12],23,22));
-    assert(isEdgeTrie(t,paths[13],23,22));
-    assert(isEdgeTrie(t,paths[14],23,22));
-
-    assert(isEdgeTrie(t,paths[15],23,22));
-    assert(isEdgeTrie(t,paths[16],23,22));
-    assert(isEdgeTrie(t,paths[17],23,22));
-    assert(isEdgeTrie(t,paths[18],23,22));
-    assert(isEdgeTrie(t,paths[19],23,22));
-
-    assert(isEdgeTrie(t,paths[20],23,22));
-    assert(isEdgeTrie(t,paths[21],23,22));
-    assert(isEdgeTrie(t,paths[22],23,22));
-    assert(isEdgeTrie(t,paths[23],23,22));
-    assert(isEdgeTrie(t,paths[24],23,22));
 }
 
+void testDeletiony(){
+    //first we instanciate the trie
+    trieNode *t = (trieNode *) malloc(sizeof(trieNode));
+    t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
+    t->block = NULL;
+    double alpha = 0.99;
+    N1 = 4;
+    Nt = S3;
+    sizeArray = (uint16_t *) malloc(sizeof(uint16_t)*(Nt+1));
+    for (int i = 0; i <= Nt; ++i) {
+        if (i > N1) N1 = 4*(((uint16_t)ceil((double)N1/alpha)+3)/4);
+        sizeArray[i] = N1;
+    }
+
+    for (int i=0;i<25;i++){
+        if(i!=19 && i!=18 && i!=17 && i!=16){
+            insertTrie(t, paths[i], 23, 22);
+        }
+    }
+
+    for (int i=0;i<25;i++){
+        if(i!=19 && i!=18 && i!=17 && i!=16) {
+            assert(isEdgeTrie(t, paths[i], 23, 22));
+        }else{
+            assert(!isEdgeTrie(t, paths[i], 23, 22));
+        }
+    }
+
+    char srcFolder2[] = "../materializeField/A1/";
+    materializeTrie(t,srcFolder2);
+
+}
 
 int main(){
     //testDeletion1();
     //testDeletion2();
     //testDeletion3();
-
     testDeletion4();
+    //testDeletiony();
+    //testDeletionx();
     printf("congratulations, all test passed\n");
     return 0;
 }
