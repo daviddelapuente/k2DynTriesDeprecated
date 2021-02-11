@@ -381,7 +381,7 @@ void testDeletion4(){
     }
 
     int miniTests=(int) pow(2,25);
-    for(int i=miniTests/3;i<miniTests;i++){
+    for(int i=0;i<miniTests;i++){
         printf("%i\n",i);
 
 
