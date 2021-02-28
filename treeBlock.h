@@ -284,4 +284,15 @@ const int8_t childRankT[16][4] = {
 };
 
 
+/*
+1) e=0: [0fgh] ->m1=0000 and m2=0fgh; m2<<4=fgh0; m1|m2=fgh0
+2) f=0: [e0gh] ->m1=e000 and m2=00gh; m2<<4=0gh0; m1|m2=egh0
+3) g=0: [ef0h] ->m1=ef00 and m2=000h; m2<<4=00h0; m1|m2=efh0
+4) h=0: [efg0] ->m1=efg0 and m2=0000; m2<<4=0000; m1|m2=efg0
+ */
+
+const uint16_t delete0Table1[4] = {0x0000,0xf000,0xff00,0xfff0};
+const uint16_t delete0Table2[4] = {0x0fff,0x00ff,0x000f,0x0000};
+
+
 #endif
