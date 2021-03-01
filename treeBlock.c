@@ -1042,6 +1042,36 @@ uint64_t sizeTrie(trieNode *t){
 
 /*here goes the deletion part*/
 
+void printDfuds(uint16_t *A,int n){
+    for(int i=0;i<n;i++){
+        printf("%u ",A[i]);
+    }
+    printf("\n");
+}
+
+
+uint16_t table[4] = {0x0fff, 0xf0ff, 0xff0f, 0xfff0};
+
+void deleteZeros(uint16_t * A,int n){
+    int zeroIndex = 0;
+    for (int actualIndex = 0; actualIndex < 4 * n; actualIndex++){
+        uint16_t actualNumber = A[actualIndex / 4];
+        actualNumber <<= (actualIndex % 4) * 4;
+        actualNumber >>= 3 * 4;
+        if (actualNumber != 0)
+        {
+            uint16_t aux = actualNumber;
+            uint16_t zeroAux = A[zeroIndex / 4];
+            zeroAux <<= (zeroIndex % 4) * 4;
+            zeroAux >>= 3 * 4;
+
+            A[actualIndex / 4] = A[actualIndex / 4] & table[actualIndex % 4] | (zeroAux << (4 * (3 - (actualIndex % 4))));
+            A[zeroIndex / 4] = A[zeroIndex / 4] & table[zeroIndex % 4] | (aux << (4 * (3 - (zeroIndex % 4))));
+            zeroIndex++;
+        }
+    }
+}
+
 void printTreePathStack(uint8_t *st,int index){
     printf("pathStackIndex = %u\n",index);
     printf("pathStack =\n");
@@ -1166,22 +1196,14 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
                 /*
                  [abcd, efgh, ijkl,mnop]
                  if f (actualNode.second) =0
-
                  we need to update every int in dfuds from actualNode.first
-
                  in our case, we need to update [efgh,ijkl,mnop]
-
                  in actualNode.first we do [eghx,ijkl,mnop]
                  where x must be the the first 4 bits in the nextNode (in this case x=i
-
                  so we do [eghi,ijkl,mnop]
-
                  then for every other node, we do <<4 | x
-
                  so we do [eghi,jklx,mnop] -> [eghi,jklm,nopx]
-
                  but in the last node x=0 so we have [eghi,jklm,nop0]
-
                  */
 
 
@@ -1196,7 +1218,6 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
                     4) h=0: [efg0] ->m1=efg0 and m2=0000; m2<<4=0000; m1|m2=efg0
                 */
 
-
                 uint16_t m1= actualBlock->dfuds[actualNode.first] & delete0Table1[actualNode.second];
                 uint16_t m2= actualBlock->dfuds[actualNode.first] & delete0Table2[actualNode.second];
                 m2<<=4;
@@ -1206,33 +1227,11 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
                  then we will update result to eghx where x is the first 4 bits in the next node (only if the next node exist)
                  */
 
-
-                //ask if there are more nodes in dfuds
-                if (actualNode.first+1>= (actualBlock->nNodes+3)/4 ){
-                    actualBlock->dfuds[actualNode.first]=result;
-                }else{
-                    result=result | (actualBlock->dfuds[actualNode.first+1]>>12 );
-                    actualBlock->dfuds[actualNode.first]=result;
-
-                    /*
-                     now we need to update the other nodes in dfuds
-                     */
-
-                    for(int i = actualNode.first+1; i<(actualBlock->nNodes+3)/4 -1;i++){
-                        result=actualBlock->dfuds[i];
-                        result<<=4;
-                        result= result | (actualBlock->dfuds[i+1]<<12);
-                        actualBlock->dfuds[i]=result;
-                    }
-                    //update the last node
-                    actualBlock->dfuds[(actualBlock->nNodes+3)/4 -1]<<=4;
-                }
-
                 actualBlock->nNodes--;
                 deleteNodes++;
             }
 
-
+            deleteZeros(actualBlock->dfuds,actualBlock->maxNodes/4);
             //now we want to know ho many nodes has auxFirst
             auxFirst = (auxFirst>>shiftT[actualNode.second]) & 0x000f;
 

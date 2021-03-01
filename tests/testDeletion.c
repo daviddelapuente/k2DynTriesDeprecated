@@ -498,10 +498,10 @@ void testDeletiony(){
 }
 
 int main(){
-    //testDeletion1();
-    //testDeletion2();
-    //testDeletion3();
-    testDeletion4();
+    testDeletion1();
+    testDeletion2();
+    testDeletion3();
+    //testDeletion4();
     //testDeletiony();
     //testDeletionx();
     printf("congratulations, all test passed\n");
