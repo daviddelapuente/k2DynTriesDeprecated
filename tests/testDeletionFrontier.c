@@ -132,6 +132,8 @@ void testDeletion(){
 
 }
 
+
+//test deletion in a block in a deep level
 void testDeletion3(){
 
     trieNode *t = (trieNode *) malloc(sizeof(trieNode));
@@ -148,31 +150,44 @@ void testDeletion3(){
     }
     //now we inert the first 65536 points (in fourth base)
     long long c=0;
-    while(c<=296){
+    while(c<=500){
         uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
         //uint8_t path[30]={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
         insertTrie(t, path, 23, 22);
         c++;
     }
 
-    c=0;
-
-    while(c<=190){
+    c=5;
+    while(c<=5){
         uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
         //uint8_t path[30]={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
         deleteTrie(t, path, 23, 22);
         c++;
     }
 
+
+    c=0;
+    while(c<=500){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        //uint8_t path[30]={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+        if(c!=5){
+            assert(isEdgeTrie(t,path,23,22));
+        }else{
+            assert(!isEdgeTrie(t,path,23,22));
+        }
+        c++;
+    }
+
+
     //now we materialize the trie in ../materializeFie/A1
-    char srcFolder[] = "../materializeField/A1/";
+    char srcFolder[] = "../materializeField/A2/";
     materializeTrie(t,srcFolder);
 }
 
 
 int main(){
-    testDeletion2();
-    //testDeletion3();
+    //testDeletion2();
+    testDeletion3();
 
     //dummyTest();
     printf("congratulations, all test passed\n");
