@@ -90,6 +90,7 @@ struct treeBlock
     void grow(uint16_t extraNodes);
     // shrink dfuds and update maxNodes
     void shrink(uint16_t deletedNodes);
+    void shrink2();
     //return a treeNode where the subtree begin (the end is in subTreeSize)
     treeNode selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, uint16_t & depthSelectN);
     //return the pointer to a treeBlock pointer, in function of the current flag (fronteir node)
