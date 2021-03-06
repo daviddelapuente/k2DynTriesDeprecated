@@ -207,19 +207,14 @@ void testDeletion4(){
     }
 
     c=0;
-    while(c<=253){
+    while(c<=500){
         uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
         //uint8_t path[30]={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
-        deleteTrie2(t, path, 23, 22);
+        deleteTrie(t, path, 23, 22);
         c++;
     }
-    c=254;
-    while(c<=255){
-        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
-        //uint8_t path[30]={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
-        deleteTrie2(t, path, 23, 22);
-        c++;
-    }
+
+
 
 
     //now we materialize the trie in ../materializeFie/A1
@@ -241,7 +236,7 @@ void testDeletion5(){
         sizeArray[i] = N1;
     }
     //now we inert the first 65536 points (in fourth base)
-    long long c=256;
+    long long c=258;
     while(c<=500){
         uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
         //uint8_t path[30]={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
@@ -271,7 +266,7 @@ void testDeletion5(){
     materializeTrie(t,srcFolder);
 }
 int main(){
-    testDeletion5();
+    testDeletion4();
 
     //dummyTest();
     printf("congratulations, all test passed\n");
