@@ -1290,7 +1290,6 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
         //todo: here ocurs the optimization of union
         if(actualBlock->nNodes==0){
             //is time to delete the block
-            printf("yeiii\n");
             deleteBlock=true;
         }
     }
@@ -1610,7 +1609,6 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
         //todo: here ocurs the optimization of union
         if(actualBlock->nNodes==0){
             //is time to delete the block
-            printf("yeiii\n");
             deleteBlock=true;
         }
     }
