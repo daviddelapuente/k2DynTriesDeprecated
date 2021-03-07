@@ -1136,6 +1136,8 @@ int delTreeNodeIndex=0;
 
 //how many nodes of the path are in the block
 uint8_t nodesInBlockStack[4096];
+uint8_t flagPathBlockStack[4096];
+
 //stack of treeBlock
 treeBlock* delBlockStack[4096];
 int delBlockNodeIndex=0;
@@ -1154,16 +1156,20 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
     delBlockStack[delBlockNodeIndex]=curBlock;
     nodesInBlockStack[delBlockNodeIndex]=1;
 
+    uint16_t lastFlag;
+
     //traverse the string (the path) until we reach the final node or we dont find a path
     uint64_t i;
     for (i = 0; i < length; ++i) {
 
         delTreePathStack[delTreeNodeIndex]=str[i];
         //we get the child using the morton code char (str[i])
+        lastFlag=curFlag;
         curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
         //if the child function returned a treeNode with a -1, that means that the path does not exist. so we break here.
         if (curNodeAux.first == (NODE_TYPE)-1) {
             //reset the indexes
+            printf("baad\n");
             delTreeNodeIndex=0;
             delBlockNodeIndex=0;
             return false;
@@ -1182,6 +1188,7 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
         if (changedBlock==1) {
             changedBlock=0;
 
+            flagPathBlockStack[delBlockNodeIndex]=lastFlag;
             delBlockNodeIndex++;
             delBlockStack[delBlockNodeIndex]=curBlock;
 
@@ -1196,6 +1203,8 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
     }
     nodesInBlockStack[delBlockNodeIndex]--;
 
+
+
     delTreeNodeIndex--;
     int count=0;
     //now we traverse the stack backward deleting the nodes till a path fork
@@ -1207,17 +1216,28 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
         if (deleteBlock){
             //in the actualBlock we should delete the last block
             //todo: arreglar el nptrs=0 y generalizarlo
+            deleteBlock=false;
             actualBlock->freeTreeBlock();
             actualBlock=NULL;
             actualBlock=delBlockStack[i];
-            actualBlock->nPtrs=0;
+            if(actualBlock->nPtrs==0){
+                actualBlock->ptr=NULL;
+                actualBlock->nPtrs--;
+            }else{
+
+                actualBlock->nPtrs--;
+                for(uint16_t k=flagPathBlockStack[i];k<actualBlock->nPtrs;k++){
+                    ((blockPtr*)actualBlock->ptr)[k]= ((blockPtr *)actualBlock->ptr)[k+1];
+                }
+
+            }
         }else{
             actualBlock=delBlockStack[i];
         }
 
         int deleteNodes=0;
         //we iter for each node in each block
-        for(int j=0;j<nodesInBlockStack[delBlockNodeIndex];j++){
+        for(int j=0;j<nodesInBlockStack[i];j++){
             //get the actual char in the path (from bottom to top, dont forget it)
             uint8_t actualChar=delTreePathStack[delTreeNodeIndex];
 
@@ -1233,6 +1253,13 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
             auxSecond=(auxSecond>>shiftT[actualNode.second]) & 0x000f;
             if(auxSecond==0){
                 //todo:here ocurs optimization of 0000
+
+                //actualize frontier
+                for(uint16_t k=0;k<actualBlock->nPtrs;k++){
+                    if(((blockPtr*)actualBlock->ptr)[k].flag>(actualNode.first*4+actualNode.second)){
+                        ((blockPtr*)actualBlock->ptr)[k].flag--;
+                    }
+                }
                 actualBlock->nNodes--;
                 deleteNodes++;
                 deleteZeros2(actualBlock->dfuds,actualBlock->maxNodes/4);
@@ -1451,16 +1478,20 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
     delBlockStack[delBlockNodeIndex]=curBlock;
     nodesInBlockStack[delBlockNodeIndex]=1;
 
+    uint16_t lastFlag;
+
     //traverse the string (the path) until we reach the final node or we dont find a path
     uint64_t i;
     for (i = 0; i < length; ++i) {
-        printf("c=%u\n",str[i]);
+
         delTreePathStack[delTreeNodeIndex]=str[i];
         //we get the child using the morton code char (str[i])
+        lastFlag=curFlag;
         curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
         //if the child function returned a treeNode with a -1, that means that the path does not exist. so we break here.
         if (curNodeAux.first == (NODE_TYPE)-1) {
             //reset the indexes
+            printf("baad\n");
             delTreeNodeIndex=0;
             delBlockNodeIndex=0;
             return false;
@@ -1478,7 +1509,7 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
         //if we are in a fronteir node
         if (changedBlock==1) {
             changedBlock=0;
-
+            flagPathBlockStack[delBlockNodeIndex]=lastFlag;
             delBlockNodeIndex++;
             delBlockStack[delBlockNodeIndex]=curBlock;
 
@@ -1491,8 +1522,16 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
             nodesInBlockStack[delBlockNodeIndex]=2;
         }
     }
-
     nodesInBlockStack[delBlockNodeIndex]--;
+    int r=0;
+    for(int k=0;k<=delBlockNodeIndex;k++){
+        printf("block\n");
+        for(int l=0;l<nodesInBlockStack[k];l++){
+            printf("%u\n",delTreeNodeStack[r].first*4+delTreeNodeStack[r].second);
+            r++;
+        }
+    }
+
 
     delTreeNodeIndex--;
     int count=0;
@@ -1503,17 +1542,31 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
         treeBlock *actualBlock;
 
         if (deleteBlock){
+
             //in the actualBlock we should delete the last block
+            deleteBlock=false;
             actualBlock->freeTreeBlock();
             actualBlock=NULL;
             actualBlock=delBlockStack[i];
+            if(actualBlock->nPtrs==0){
+                actualBlock->ptr=NULL;
+                actualBlock->nPtrs=0;
+            }else{
+
+                actualBlock->nPtrs--;
+                for(uint16_t k=flagPathBlockStack[i];k<actualBlock->nPtrs;k++){
+                    ((blockPtr*)actualBlock->ptr)[k]= ((blockPtr *)actualBlock->ptr)[k+1];
+                }
+
+            }
         }else{
             actualBlock=delBlockStack[i];
         }
 
         int deleteNodes=0;
         //we iter for each node in each block
-        for(int j=0;j<nodesInBlockStack[delBlockNodeIndex];j++){
+        for(int j=0;j<nodesInBlockStack[i];j++){
+            //printf("b=%u\n",i);
             //get the actual char in the path (from bottom to top, dont forget it)
             uint8_t actualChar=delTreePathStack[delTreeNodeIndex];
 
@@ -1529,19 +1582,17 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
             auxSecond=(auxSecond>>shiftT[actualNode.second]) & 0x000f;
             if(auxSecond==0){
                 //todo:here ocurs optimization of 0000
+
+                //actualize frontier
+                for(uint16_t k=0;k<actualBlock->nPtrs;k++){
+                    if(((blockPtr*)actualBlock->ptr)[k].flag>(actualNode.first*4+actualNode.second)){
+                        ((blockPtr*)actualBlock->ptr)[k].flag--;
+                    }
+                }
                 actualBlock->nNodes--;
                 deleteNodes++;
                 deleteZeros2(actualBlock->dfuds,actualBlock->maxNodes/4);
-            }
-
-
-            //now we want to know ho many nodes has auxFirst
-            auxFirst = (auxFirst>>shiftT[actualNode.second]) & 0x000f;
-
-            if(auxFirst==0){
-                //now we remove the node from dfuds
-                //we continue deliting;
-                //todo: edit the flags, but this part is for a big test
+                actualBlock->shrink2();
             }else{
                 //if auxFirst !=0 that means that the path was forked so we return false
                 if(actualNode.first==0 && actualNode.second==0 && j>=0){
