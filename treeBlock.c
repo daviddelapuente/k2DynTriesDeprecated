@@ -1129,14 +1129,6 @@ void treeBlock::shrink2(){
     }
 }
 
-/*
-void treeBlock::shrink(uint16_t deletedNodes){
-    dfuds = (uint16_t *) realloc(dfuds, sizeof(uint16_t)*((sizeArray[nNodes-deletedNodes] + 3)/4));
-    //the new max is sizeArray[nNodes+extraNodes]
-    maxNodes = 4*((sizeArray[nNodes-deletedNodes]+3)/4);
-}*/
-
-
 //stack of treeNodes
 treeNode delTreeNodeStack[4096];
 uint8_t delTreePathStack[4096];
@@ -1301,6 +1293,8 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
             deleteBlock=true;
         }
     }
+    delTreeNodeIndex=0;
+    delBlockNodeIndex=0;
     return true;
 }
 
@@ -1472,7 +1466,7 @@ void deleteZeros3(uint16_t *A,int n){
 
 bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth){
     //in the first part we insert nodes in the stack, so first we fill path stack
-
+    printf("b=%u\n",delBlockNodeIndex);
     //curBlock is pointing to the root because we will start in that point. curBlockAux is a pointer we will use to decend the tree
     treeBlock *curBlock = root, *curBlockAux;
     //set a dummy treeNode, and an aux pointer to descend the tree
@@ -1531,16 +1525,12 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
     }
     nodesInBlockStack[delBlockNodeIndex]--;
 
-
-
     delTreeNodeIndex--;
     int count=0;
     //now we traverse the stack backward deleting the nodes till a path fork
     bool deleteBlock=false;
     //first iter for each block in the stack delBlockStack
     for(int i=delBlockNodeIndex;i>=0;i--){
-
-        printf("a=%u\n",i);
         treeBlock *actualBlock;
 
         if (deleteBlock){
@@ -1610,9 +1600,7 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
                 }else{
                     delTreeNodeIndex=0;
                     delBlockNodeIndex=0;
-                    printf("%u\n",actualBlock->maxNodes);
                     actualBlock->shrink2();
-                    printf("%u\n",actualBlock->maxNodes);
                     return false;
                 }
             }
