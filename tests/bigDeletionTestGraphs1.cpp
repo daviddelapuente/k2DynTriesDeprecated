@@ -57,7 +57,7 @@ int main()
     clock_t start, diff=0;
     //we read the first line of the input (wich contains the number of: rows,cols,edges)
     scanCode=scanf("%lu %lu %lu\n", &n, &n1, &nEdges);
-    for (uint64_t i = 0; i < 10000000; ++i) {
+    for (uint64_t i = 0; i < nEdges; ++i) {
         //we read the line containing the edge
         scanCode=scanf("%s\n", str);
         //todo: podemos cambiar el 23 por length thel string en el futuro.
@@ -90,7 +90,7 @@ int main()
     //diff to compute the time, found to know if an edge was found
     diff = 0;
     //we will test the first 100000000 edges in the file
-    for (uint64_t i = 0; i < 10000000/*nEdges*/; ++i) {
+    for (uint64_t i = 0; i < nEdges/*nEdges*/; ++i) {
         scanCode=scanf("%s\n", str);
         for (uint8_t j = 0; j < 23; ++j)
             switch(str[j]) {
@@ -118,7 +118,7 @@ int main()
     //diff to compute the time, found to know if an edge was found
     diff = 0;
     //we will test the first 100000000 edges in the file
-    for (uint64_t i = 0; i < 10000000/*nEdges*/; ++i) {
+    for (uint64_t i = 0; i < nEdges/*nEdges*/; ++i) {
         scanCode=scanf("%s\n", str);
         for (uint8_t j = 0; j < 23; ++j)
             switch(str[j]) {
@@ -138,6 +138,8 @@ int main()
         assert(!isEdgeTrie(t, str, 23, 22));
         diff += clock() - start;
     }
+
+    printf("congratulation, all test passed\n");
 
 
 
