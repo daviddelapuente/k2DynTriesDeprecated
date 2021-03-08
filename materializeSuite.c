@@ -74,7 +74,6 @@ void materializeBlock(treeBlock * t,char *srcFolder){
     char aux[strlen(tempSrcFolder)];
     strcpy(aux, tempSrcFolder);
     strcat(aux,"/blockInfo");
-
     writeBlockInfoFile((treeBlock *) t,aux);
 
 
@@ -106,7 +105,6 @@ void materializeBlock(treeBlock * t,char *srcFolder){
         strcpy(aux, tempSrcFolder);
         strcat(aux,s2);
         mkdir(aux,0777);
-
         materializeBlock(ptr[i].P,aux);
     }
 }
