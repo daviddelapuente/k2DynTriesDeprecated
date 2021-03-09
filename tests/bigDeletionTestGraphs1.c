@@ -1,5 +1,4 @@
-#include "../materializeSuite.c"
-#include "assert.h"
+#include "../treeBlock.c"
 
 /*This file contain the test that create a k2 dyn tree with the indochina graph
  you need to pass the graph file as an input when you run the program*/
@@ -19,6 +18,8 @@ int main()
     trieNode *t = (trieNode *) malloc(sizeof(trieNode));
     t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
     t->block = NULL;
+
+    bool found;
 
     //scan int code
     int scanCode;
@@ -48,6 +49,23 @@ int main()
 
 
 
+
+    FILE *fpnEdges;
+    FILE *fpinsert;
+
+
+    FILE *fpdelete;
+
+    fpnEdges=fopen("./bigTest3Results/nEdges.txt", "w");
+    fpinsert=fopen("./bigTest3Results/insert.txt", "w");
+
+    fpdelete=fopen("./bigTest3Results/delete.txt", "w");
+
+    if (fpnEdges == NULL ||fpinsert==NULL || fpdelete==NULL){
+        printf("Error opening file!\n");
+        exit(1);
+    }
+
     /*int this part we insert the nodes in the trie
     n=rows, n1=cols, nEdges=number of edges*/
     uint64_t n, n1, nEdges;
@@ -74,24 +92,46 @@ int main()
                 case '3': str[j] = 3;
                     break;
             }
-        //we print each 1000000 edges
-        if (i%1000000 == 0) {printf("%lu\n", i); fflush(stdout);}
+
         //for each edge, we sum the time it cost to insert
         start = clock();
-        //t=trieNode, str=mortonCode, length of str=23, maxdepth of the tree=22
         insertTrie(t, str, 23, 22);
         diff += clock() - start;
+
+
+        //we print each 1000000 edges
+        if (i%5000000 == 0 && i!=0) {
+            uint64_t msec = diff * 1000 / CLOCKS_PER_SEC;
+
+            printf(" nEdges=%lu\n",i);
+            fprintf(fpnEdges,"%lu,\n",i);
+
+            printf("     insertTime=%f\n",(float)msec/i);
+            fprintf(fpinsert,"%f,\n",(float)msec/i);
+        }
     }
 
-    printf("aaaaaaaaaaaaaaaaaaaaaaaaaa\n");
+    uint64_t msec = diff * 1000 / CLOCKS_PER_SEC;
+    printf(" nEdges=%lu\n",nEdges);
+    fprintf(fpnEdges,"%lu\n",nEdges);
+
+    printf("     insertTime=%f\n",(float)msec/nEdges);
+    fprintf(fpinsert,"%f\n",(float)msec/nEdges);
+
+
+
+
+
+    clock_t start2, diff2=0;
 
     fseek(stdin,0,SEEK_SET);
     scanCode=scanf("%lu %lu %lu\n", &n, &n1, &nEdges);
-    //diff to compute the time, found to know if an edge was found
-    diff = 0;
-    //we will test the first 100000000 edges in the file
-    for (uint64_t i = 0; i < nEdges/*nEdges*/; ++i) {
+    for (uint64_t i = 0; i < nEdges; ++i) {
+        //we read the line containing the edge
         scanCode=scanf("%s\n", str);
+        //todo: podemos cambiar el 23 por length thel string en el futuro.
+        //for each char of the string, we need to convert it to int.
+        //todo: podemos usar atoi y ahorrarnos el switch
         for (uint8_t j = 0; j < 23; ++j)
             switch(str[j]) {
                 case '0': str[j] = 0;
@@ -103,46 +143,36 @@ int main()
                 case '3': str[j] = 3;
                     break;
             }
-        //each 1000000 print an edge
-        if (i%1000000 == 0) { printf("%lu\n", i); fflush(stdout);}
-        start = clock();
-        //return true if the edge is in the tree. t=trie pointer, str=morton code, 23=length of the morton code, 22=max level
-        deleteTrie(t, str, 23, 22);//isEdge(&B, str, 23, 22);
-        diff += clock() - start;
+
+        //for each edge, we sum the time it cost to insert
+        start2 = clock();
+        deleteTrie(t, str, 23, 22);
+        diff2 += clock() - start2;
+
+        //we print each 1000000 edges
+        if (i%5000000 == 0 && i!=0) {
+            uint64_t msec = diff2 * 1000 / CLOCKS_PER_SEC;
+
+            printf(" nEdges=%lu\n",i);
+
+            printf("     deleteTime=%f\n",(float)msec/i);
+            fprintf(fpdelete,"%f,\n",(float)msec/i);
+
+        }
     }
 
-    printf("aaaaaaaaaaaaaaaaaaaaaaaaaa\n");
+    msec = diff2 * 1000 / CLOCKS_PER_SEC;
+    printf(" nEdges=%lu\n",nEdges);
 
-    fseek(stdin,0,SEEK_SET);
-    scanCode=scanf("%lu %lu %lu\n", &n, &n1, &nEdges);
-    //diff to compute the time, found to know if an edge was found
-    diff = 0;
-    //we will test the first 100000000 edges in the file
-    for (uint64_t i = 0; i < nEdges/*nEdges*/; ++i) {
-        scanCode=scanf("%s\n", str);
-        for (uint8_t j = 0; j < 23; ++j)
-            switch(str[j]) {
-                case '0': str[j] = 0;
-                    break;
-                case '1': str[j] = 1;
-                    break;
-                case '2': str[j] = 2;
-                    break;
-                case '3': str[j] = 3;
-                    break;
-            }
-        //each 1000000 print an edge
-        if (i%1000000 == 0) { printf("%lu\n", i); fflush(stdout);}
-        start = clock();
-        //return true if the edge is in the tree. t=trie pointer, str=morton code, 23=length of the morton code, 22=max level
-        assert(!isEdgeTrie(t, str, 23, 22));
-        diff += clock() - start;
-    }
-
-    printf("congratulation, all test passed\n");
+    printf("     deleteTime=%f\n",(float)msec/nEdges);
+    fprintf(fpdelete,"%f\n",(float)msec/nEdges);
 
 
+    fclose(fpnEdges);
+    fclose(fpinsert);
 
+    fclose(fpdelete);
+    printf("congratulation all test passed\n");
     return 0;
 }
 

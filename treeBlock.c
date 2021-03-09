@@ -168,7 +168,7 @@ treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, ui
     }
 
 
-    //border case, this menas, that the last filter didn choose any candidate, so we will use another metric
+    //border case, this means, that the last filter didn choose any candidate, so we will use another metric
     //and the new subtree is the one that minimize nNodes-2*subtreeSize.
     if (leftmost == MAX_UINT_16) {
         int16_t diff;
@@ -1144,27 +1144,27 @@ int delBlockNodeIndex=0;
 
 bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth){
     //in the first part we insert nodes in the stack, so first we fill path stack
-
     //curBlock is pointing to the root because we will start in that point. curBlockAux is a pointer we will use to decend the tree
     treeBlock *curBlock = root, *curBlockAux;
     //set a dummy treeNode, and an aux pointer to descend the tree
     treeNode curNode(0,0), curNodeAux,dummyNode(0,0);
     //dummy flag
     uint16_t curFlag = 0;
-
+    //set the first block and node in the respective stacks
     delTreeNodeStack[delTreeNodeIndex]=curNode;
     delBlockStack[delBlockNodeIndex]=curBlock;
     nodesInBlockStack[delBlockNodeIndex]=1;
-
+    //if we descend from one block to another, this flag will store the position of the second block in the first block
     uint16_t lastFlag;
 
     //traverse the string (the path) until we reach the final node or we dont find a path
     uint64_t i;
     for (i = 0; i < length; ++i) {
-
+        //put the char in the char stack
         delTreePathStack[delTreeNodeIndex]=str[i];
-        //we get the child using the morton code char (str[i])
+        //if we descend in a block, we want to store the last flag before it change
         lastFlag=curFlag;
+        //we get the child using the morton code char (str[i])
         curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
         //if the child function returned a treeNode with a -1, that means that the path does not exist. so we break here.
         if (curNodeAux.first == (NODE_TYPE)-1) {
@@ -1173,19 +1173,17 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
             delTreeNodeIndex=0;
             delBlockNodeIndex=0;
             return false;
-        }else {
-            //else, we update the curNode
-            curNode = curNodeAux;
-            if(!changedBlock==1){
-                delTreeNodeIndex++;
-                delTreeNodeStack[delTreeNodeIndex]=curNode;
-                nodesInBlockStack[delBlockNodeIndex]++;
-            }
-
         }
 
-        //if we are in a fronteir node
-        if (changedBlock==1) {
+        //we update the curNode
+        curNode = curNodeAux;
+        //if the block didnt changed
+        if(changedBlock==0){
+            delTreeNodeIndex++;
+            delTreeNodeStack[delTreeNodeIndex]=curNode;
+            nodesInBlockStack[delBlockNodeIndex]++;
+        }else{
+            //if the block changed (that means we are in a frontier)
             changedBlock=0;
 
             flagPathBlockStack[delBlockNodeIndex]=lastFlag;
@@ -1201,98 +1199,81 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
             nodesInBlockStack[delBlockNodeIndex]=2;
         }
     }
+    //substract one int the delTreeStackIndex because the last for cycle add an extra one
     nodesInBlockStack[delBlockNodeIndex]--;
-
-
-
     delTreeNodeIndex--;
-    int count=0;
+
+
+
     //now we traverse the stack backward deleting the nodes till a path fork
+    //this variable will tell us if we need to delete the last block traversed
     bool deleteBlock=false;
     //first iter for each block in the stack delBlockStack
     for(int i=delBlockNodeIndex;i>=0;i--){
-        treeBlock *actualBlock;
 
+        treeBlock *actualBlock;
         if (deleteBlock){
             //in the actualBlock we should delete the last block
-            //todo: arreglar el nptrs=0 y generalizarlo
             deleteBlock=false;
             actualBlock->freeTreeBlock();
             actualBlock=NULL;
             actualBlock=delBlockStack[i];
-            if(actualBlock->nPtrs==1){
+            actualBlock->nPtrs--;
+            if(actualBlock->nPtrs==0){
                 actualBlock->ptr=NULL;
-                actualBlock->nPtrs--;
             }else{
-
-                actualBlock->nPtrs--;
                 for(uint16_t k=flagPathBlockStack[i];k<actualBlock->nPtrs;k++){
                     ((blockPtr*)actualBlock->ptr)[k]= ((blockPtr *)actualBlock->ptr)[k+1];
                 }
-
+                actualBlock->ptr = realloc(actualBlock->ptr, sizeof(blockPtr)*(actualBlock->nPtrs));
             }
         }else{
             actualBlock=delBlockStack[i];
         }
 
-        int deleteNodes=0;
+
         //we iter for each node in each block
         for(int j=0;j<nodesInBlockStack[i];j++){
             //get the actual char in the path (from bottom to top, dont forget it)
             uint8_t actualChar=delTreePathStack[delTreeNodeIndex];
-
             //get the actual node in the path
             treeNode actualNode=delTreeNodeStack[delTreeNodeIndex];
-
             //now we delete the node in the block
             uint16_t auxFirst=actualBlock->dfuds[actualNode.first];
             auxFirst=auxFirst & delNodeInBlockT[actualNode.second][actualChar];
             actualBlock->dfuds[actualNode.first]=auxFirst;
 
+            //get the node we update to check if is 0
             uint16_t auxSecond=actualBlock->dfuds[actualNode.first];
             auxSecond=(auxSecond>>shiftT[actualNode.second]) & 0x000f;
             if(auxSecond==0){
-                //todo:here ocurs optimization of 0000
-
-                //actualize frontier
+                //actualize frontier (basicaly substract 1 from every flag in the frointier grater than the updated node
+                //todo: talvez esto podria optimizarse
                 for(uint16_t k=0;k<actualBlock->nPtrs;k++){
                     if(((blockPtr*)actualBlock->ptr)[k].flag>(actualNode.first*4+actualNode.second)){
                         ((blockPtr*)actualBlock->ptr)[k].flag--;
                     }
                 }
+                //substract 1 node from nNodes and delete the zeros
                 actualBlock->nNodes--;
-                deleteNodes++;
-                deleteZeros2(actualBlock->dfuds,actualBlock->maxNodes/4);
-            }
-
-
-            //now we want to know ho many nodes has auxFirst
-            auxFirst = (auxFirst>>shiftT[actualNode.second]) & 0x000f;
-
-            if(auxFirst==0){
-                //now we remove the node from dfuds
-                //we continue deliting;
-                //todo: edit the flags, but this part is for a big test
-            }else{
+            }else if(!(actualNode.first==0 && actualNode.second==0 && j>=0)){
                 //if auxFirst !=0 that means that the path was forked so we return false
-                if(actualNode.first==0 && actualNode.second==0 && j>=0){
-                    actualBlock->shrink2();
-                }else{
-                    delTreeNodeIndex=0;
-                    delBlockNodeIndex=0;
-                    actualBlock->shrink2();
-                    return false;
-                }
+                delTreeNodeIndex=0;
+                delBlockNodeIndex=0;
+                deleteZeros(actualBlock->dfuds,actualBlock->maxNodes/4);
+                actualBlock->shrink2();
+                return false;
             }
             delTreeNodeIndex--;
         }
+        deleteZeros(actualBlock->dfuds,actualBlock->maxNodes/4);
         actualBlock->shrink2();
-        //todo: here ocurs the optimization of union
         if(actualBlock->nNodes==0){
             //is time to delete the block
             deleteBlock=true;
         }
     }
+
     delTreeNodeIndex=0;
     delBlockNodeIndex=0;
     return true;
@@ -1465,8 +1446,9 @@ void deleteZeros3(uint16_t *A,int n){
 
 
 bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth){
+
     //in the first part we insert nodes in the stack, so first we fill path stack
-    printf("b=%u\n",delBlockNodeIndex);
+
     //curBlock is pointing to the root because we will start in that point. curBlockAux is a pointer we will use to decend the tree
     treeBlock *curBlock = root, *curBlockAux;
     //set a dummy treeNode, and an aux pointer to descend the tree
@@ -1524,6 +1506,8 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
         }
     }
     nodesInBlockStack[delBlockNodeIndex]--;
+
+
 
     delTreeNodeIndex--;
     int count=0;
@@ -1613,6 +1597,8 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
             deleteBlock=true;
         }
     }
+    delTreeNodeIndex=0;
+    delBlockNodeIndex=0;
     return true;
 }
 
@@ -1655,7 +1641,8 @@ void deleteTrie2(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
     }
 
     //we call deleteBlockNodes, that delete the remaining path str[i...length(str)] in treeBlocks
-    bool continueDelete=deleteBlockNodes2(p, &str[i], length-i, i, maxDepth);
+    bool continueDelete=deleteBlockNodes(p, &str[i], length-i, i, maxDepth);
+
     if(continueDelete){
         //if continueDelete is true, that means that we should check the delTrieNodeStack to continue deleting until the path is forked
         //get the last trieNode in the stack
@@ -1693,7 +1680,6 @@ void deleteTrie2(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
 
     }else{
         //if continueDelete is false, that means that this part of the path is still in use
-
         delTrieNodeIndex=0;
         return;
     }
