@@ -1198,7 +1198,7 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
         //if the child function returned a treeNode with a -1, that means that the path does not exist. so we break here.
         if (curNodeAux.first == (NODE_TYPE)-1) {
             //reset the indexes
-            printf("baad\n");
+            printf("baaaaaaaaaaaaaaaaad\n");
             delTreeNodeIndex=0;
             delBlockNodeIndex=0;
             return false;
@@ -1293,9 +1293,6 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
             delTreeNodeIndex--;
         }
         deleteZeros(actualBlock->dfuds,actualBlock->maxNodes/4);
-
-        uint16_t arara1=actualBlock->nNodes;
-        uint16_t arara2=actualBlock->maxNodes;
 
         actualBlock->shrink2();
 

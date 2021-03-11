@@ -145,7 +145,7 @@ int main()
 
         //for each edge, we sum the time it cost to insert
         start2 = clock();
-        deleteTrie(t, str, 23, 22);
+        deleteTrie2(t, str, 23, 22);
         diff2 += clock() - start2;
 
         //we print each 1000000 edges

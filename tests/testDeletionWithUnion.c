@@ -895,6 +895,233 @@ void test1000000Deterministic1(){
 
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void test5MDeterministic1(){
+
+
+
+    trieNode *t = (trieNode *) malloc(sizeof(trieNode));
+    t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
+    t->block = NULL;
+
+    double alpha = 0.99;
+    N1 = 4;
+    Nt = S3;
+    sizeArray = (uint16_t *) malloc(sizeof(uint16_t)*(Nt+1));
+    for (int i = 0; i <= Nt; ++i) {
+        if (i > N1) N1 = 4*(((uint16_t)ceil((double)N1/alpha)+3)/4);
+        sizeArray[i] = N1;
+    }
+
+    long long c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        insertTrie(t, path, 23, 22);
+        c++;
+    }
+
+    c=0;
+    while(c<=3485955){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        deleteTrie2(t, path, 23, 22);
+        c++;
+    }
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        if(c<=3485955){
+            assert(!isEdgeTrie(t,path,23,22));
+        }else{
+            assert(isEdgeTrie(t,path,23,22));
+        }
+        c++;
+    }
+
+    c=0;
+    while(c<=3485955){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        insertTrie(t, path, 23, 22);
+        c++;
+    }
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        assert(isEdgeTrie(t,path,23,22));
+        c++;
+    }
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        deleteTrie2(t, path, 23, 22);
+        c++;
+    }
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        assert(!isEdgeTrie(t,path,23,22));
+        c++;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        insertTrie(t, path, 23, 22);
+        c++;
+    }
+
+    c=1000000;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        deleteTrie2(t, path, 23, 22);
+        c++;
+    }
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        if(c>=1000000){
+            assert(!isEdgeTrie(t,path,23,22));
+        }else{
+            assert(isEdgeTrie(t,path,23,22));
+        }
+        c++;
+    }
+
+    c=1000000;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        insertTrie(t, path, 23, 22);
+        c++;
+    }
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        assert(isEdgeTrie(t,path,23,22));
+        c++;
+    }
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        deleteTrie2(t, path, 23, 22);
+        c++;
+    }
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        assert(!isEdgeTrie(t,path,23,22));
+        c++;
+    }
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        insertTrie(t, path, 23, 22);
+        c++;
+    }
+
+    c=200000;
+    while(c<=4800000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        deleteTrie2(t, path, 23, 22);
+        c++;
+    }
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        if(200000<=c && c<=4800000){
+            assert(!isEdgeTrie(t,path,23,22));
+        }else{
+            assert(isEdgeTrie(t,path,23,22));
+        }
+        c++;
+    }
+
+    c=200000;
+    while(c<=4800000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        insertTrie(t, path, 23, 22);
+        c++;
+    }
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        assert(isEdgeTrie(t,path,23,22));
+        c++;
+    }
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        deleteTrie2(t, path, 23, 22);
+        c++;
+    }
+
+    c=0;
+    while(c<=5000000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/4194304)%4),(uint8_t) ((c/1048576)%4),(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        assert(!isEdgeTrie(t,path,23,22));
+        c++;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void dummyTest(){
     trieNode *t = (trieNode *) malloc(sizeof(trieNode));
     t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
@@ -976,7 +1203,8 @@ int main(){
     //test1000Deterministic1();
     //test10000Deterministic1();
     //test100000Deterministic1();
-    test1000000Deterministic1();
+    //test1000000Deterministic1();
+    test5MDeterministic1();
     printf("congratulations, all test passed in\n");
     return 0;
 }
