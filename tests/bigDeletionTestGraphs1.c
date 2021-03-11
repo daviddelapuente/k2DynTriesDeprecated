@@ -65,7 +65,6 @@ int main()
         printf("Error opening file!\n");
         exit(1);
     }
-
     /*int this part we insert the nodes in the trie
     n=rows, n1=cols, nEdges=number of edges*/
     uint64_t n, n1, nEdges;
@@ -146,7 +145,7 @@ int main()
 
         //for each edge, we sum the time it cost to insert
         start2 = clock();
-        deleteTrie2(t, str, 23, 22);
+        deleteTrie(t, str, 23, 22);
         diff2 += clock() - start2;
 
         //we print each 1000000 edges

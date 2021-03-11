@@ -1050,6 +1050,35 @@ void printDfuds(uint16_t *A,int n){
     printf("\n");
 }
 
+void f(uint16_t a){
+    uint16_t n=a;
+    uint16_t mask=0x8000;
+    uint16_t mask2=0x7fff;
+    int c=16;
+    while (c) {
+        if (n & mask) {
+            printf("1");
+        }else {
+            printf("0");
+        }
+        n = n&mask2;
+        mask >>=1;
+        mask2 >>=1;
+        c--;
+    }
+
+}
+
+
+void printDfuds2(uint16_t *A,int n){
+    printf("dfuds\n");
+    for(int i=0;i<n;i++){
+        printf(" ");
+        f(A[i]);
+    }
+    printf("\n");
+}
+
 
 uint16_t table[4] = {0x0fff, 0xf0ff, 0xff0f, 0xfff0};
 
@@ -1264,7 +1293,12 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
             delTreeNodeIndex--;
         }
         deleteZeros(actualBlock->dfuds,actualBlock->maxNodes/4);
+
+        uint16_t arara1=actualBlock->nNodes;
+        uint16_t arara2=actualBlock->maxNodes;
+
         actualBlock->shrink2();
+
         if(actualBlock->nNodes==0){
             //is time to delete the block
             deleteBlock=true;
@@ -1394,36 +1428,6 @@ void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
 
 
 
-void f(uint16_t a){
-    uint16_t n=a;
-    uint16_t mask=0x8000;
-    uint16_t mask2=0x7fff;
-    int c=16;
-    while (c) {
-        if (n & mask) {
-            printf("1");
-        }else {
-            printf("0");
-        }
-        n = n&mask2;
-        mask >>=1;
-        mask2 >>=1;
-        c--;
-    }
-
-}
-
-void printDfuds2(uint16_t *A,int n){
-    printf("dfuds\n");
-    for(int i=0;i<n;i++){
-        printf(" ");
-        f(A[i]);
-    }
-    printf("\n");
-}
-
-
-
 
 void deleteZeros3(uint16_t *A,int n){
     int c = 4 * n;
@@ -1444,19 +1448,18 @@ void deleteZeros3(uint16_t *A,int n){
 uint16_t table2[4] = {0xf000, 0x0f00, 0x00f0, 0x000f};
 
 void unionBlocks(treeBlock * father, treeBlock * son,uint16_t flag,uint16_t flagIndex){
-
     //join dfuds
     //first grow the father
-
 
     father->grow(son->nNodes-1);
 
     for(int k=father->nNodes;k<father->maxNodes;k++){
         int i=k/4;
         int j=k%4;
-
         father->dfuds[i]=father->dfuds[i]&table[j];
     }
+
+
 
     //move all the nodes from flag+1 till the end, son->nNodes-1 Spaces
     for(int k=father->nNodes-1;k>flag;k--){
@@ -1533,8 +1536,6 @@ void unionBlocks(treeBlock * father, treeBlock * son,uint16_t flag,uint16_t flag
         }
 
 
-
-
         //now insert son->ptr in father->ptr
         for(int k=0;k<son->nPtrs;k++){
 
@@ -1551,6 +1552,7 @@ void unionBlocks(treeBlock * father, treeBlock * son,uint16_t flag,uint16_t flag
 
     }else{
         //if son has no frontier, we should delete flagIndex pointer and realloc
+
         for(int k=flagIndex; k<father->nPtrs-1;k++){
             ((blockPtr *)father->ptr)[k]=((blockPtr *)father->ptr)[k+1];
             ((blockPtr *)father->ptr)[k].flag+=son->nNodes-1;
@@ -1564,7 +1566,27 @@ void unionBlocks(treeBlock * father, treeBlock * son,uint16_t flag,uint16_t flag
         }
     }
 
+    int zeros=0;
+    for(int k=0;k<father->nNodes;k++){
+        int iaux=k/4;
+        int jaux=k%4;
+
+        uint16_t nodeAux=father->dfuds[iaux];
+        nodeAux=nodeAux&table2[jaux];
+        nodeAux=nodeAux>>4*(3-jaux);
+        if(nodeAux==0){
+            zeros++;
+        }
+
+    }
+
+    deleteZeros(father->dfuds,father->maxNodes/4);
+    father->nNodes-=zeros;
+    father->shrink2();
+
+
     //todo:delete leftovers
+
 
 }
 
@@ -1698,7 +1720,6 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
                 delBlockNodeIndex=0;
                 deleteZeros(actualBlock->dfuds,actualBlock->maxNodes/4);
                 actualBlock->shrink2();
-
                 if(i>0 && (actualBlock->nNodes+delBlockStack[i-1]->nNodes)<=beta){
                     //todo: aqui llamar a la funcion que une bloques
                     unionBlocks(delBlockStack[i-1],actualBlock, ((blockPtr*)delBlockStack[i-1]->ptr)[flagPathBlockStack[i-1]].flag , flagPathBlockStack[i-1]);
@@ -1708,8 +1729,10 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
             }
             delTreeNodeIndex--;
         }
+
         deleteZeros(actualBlock->dfuds,actualBlock->maxNodes/4);
         actualBlock->shrink2();
+
         if(actualBlock->nNodes==0){
             //is time to delete the block
             deleteBlock=true;
