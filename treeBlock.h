@@ -100,6 +100,7 @@ struct treeBlock
 
     //free the data structure
     void freeTreeBlock();
+    void freeTreeBlock2();
     ~treeBlock(){;};
  };
  

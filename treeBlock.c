@@ -44,6 +44,13 @@ void treeBlock::freeTreeBlock(){
     free(this);
 }
 
+void treeBlock::freeTreeBlock2(){
+    free((void *)dfuds);
+    free((void*)ptr);
+    free(this);
+}
+
+
 /*this method, realloc dfuds in a bigger array
 the idea is that the new size of the block should be sizeArray[nNodes+extraNodes]
 remember that sizeArray is an array of max sizes per blocks.*/
@@ -1443,7 +1450,6 @@ void deleteZeros3(uint16_t *A,int n){
 }
 
 uint16_t table2[4] = {0xf000, 0x0f00, 0x00f0, 0x000f};
-
 void unionBlocks(treeBlock * father, treeBlock * son,uint16_t flag,uint16_t flagIndex){
     //join dfuds
     //first grow the father
@@ -1536,18 +1542,11 @@ void unionBlocks(treeBlock * father, treeBlock * son,uint16_t flag,uint16_t flag
 
         //now insert son->ptr in father->ptr
         for(int k=0;k<son->nPtrs;k++){
-
-            if(flag!=0){
-                ((blockPtr *)father->ptr)[flagIndex+k]=((blockPtr *)son->ptr)[k];
-                ((blockPtr *)father->ptr)[flagIndex+k].flag+=flag;
-            }else{
-                printf("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm\n");
-                ((blockPtr *)father->ptr)[flagIndex+k]=((blockPtr *)son->ptr)[k];
-            }
+            ((blockPtr *)father->ptr)[flagIndex+k]=((blockPtr *)son->ptr)[k];
+            ((blockPtr *)father->ptr)[flagIndex+k].flag+=flag;
         }
 
-
-
+        son->freeTreeBlock2();
     }else{
         //if son has no frontier, we should delete flagIndex pointer and realloc
 
@@ -1562,10 +1561,11 @@ void unionBlocks(treeBlock * father, treeBlock * son,uint16_t flag,uint16_t flag
         }else {
             father->ptr = realloc(father->ptr, sizeof(blockPtr) * (father->nPtrs));
         }
+
+        son->freeTreeBlock();
     }
 
     //todo:delete leftovers
-
 
 }
 

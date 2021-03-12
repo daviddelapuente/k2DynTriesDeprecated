@@ -1218,18 +1218,33 @@ void testDeletion(){
     }
 
     long long c=0;
-    while(c<=1000000){
-        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+    while(c<=100000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
         insertTrie(t, path, 23, 22);
         c++;
     }
 
-    c=0;
-    while(c<=1000000){
-        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/262144)%4),(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+    c=2;
+    while(c<=99998){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
         deleteTrie2(t, path, 23, 22);
         c++;
     }
+
+    c=0;
+    while(c<=100000){
+        uint8_t path[30]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,(uint8_t) ((c/65536)%4),(uint8_t) ((c/16384)%4),(uint8_t) ((c/4096)%4),(uint8_t) ((c/1024)%4),(uint8_t) ((c/256)%4),(uint8_t) ((c/64)%4),(uint8_t) ((c/16)%4),(uint8_t) ((c/4)%4),(uint8_t) (c%4)};
+        if(2<=c && c<=99998){
+            assert(!isEdgeTrie(t,path,23,22));
+        }else{
+            assert(isEdgeTrie(t,path,23,22));
+        }
+        c++;
+    }
+
+
+
+
 
 }
 
