@@ -126,6 +126,7 @@ int main()
     fseek(stdin,0,SEEK_SET);
     scanCode=scanf("%lu %lu %lu\n", &n, &n1, &nEdges);
     for (uint64_t i = 0; i < nEdges; ++i) {
+
         //we read the line containing the edge
         scanCode=scanf("%s\n", str);
         //todo: podemos cambiar el 23 por length thel string en el futuro.
@@ -147,6 +148,11 @@ int main()
         start2 = clock();
         deleteTrie2(t, str, 23, 22);
         diff2 += clock() - start2;
+
+        if(stop){
+            printf("%lu\n",i);
+            break;
+        }
 
         //we print each 1000000 edges
         if (i%5000000 == 0 && i!=0) {

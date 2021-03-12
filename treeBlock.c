@@ -1485,7 +1485,7 @@ void unionBlocks(treeBlock * father, treeBlock * son,uint16_t flag,uint16_t flag
         father->dfuds[inew]=newD;
     }
 
-    father->nNodes+=son->nNodes;
+    father->nNodes+=son->nNodes-1;
     //insert the dfuds of the son in dfuds of the father
     for(int k=0;k<son->nNodes;k++){
         //father->dfuds[flag+k]=son->dfuds[k];
@@ -1519,6 +1519,7 @@ void unionBlocks(treeBlock * father, treeBlock * son,uint16_t flag,uint16_t flag
     //first need to find the index in father->ptr where flag=flag
 
     if(son->nPtrs>0){
+
         //if son has frontier
         //first grow the father frontier to absorb the son frontier
         uint16_t fatherPtrs=father->nPtrs;
@@ -1563,30 +1564,13 @@ void unionBlocks(treeBlock * father, treeBlock * son,uint16_t flag,uint16_t flag
         }
     }
 
-    int zeros=0;
-    for(int k=0;k<father->nNodes;k++){
-        int iaux=k/4;
-        int jaux=k%4;
-
-        uint16_t nodeAux=father->dfuds[iaux];
-        nodeAux=nodeAux&table2[jaux];
-        nodeAux=nodeAux>>4*(3-jaux);
-        if(nodeAux==0){
-            zeros++;
-        }
-
-    }
-
-    deleteZeros(father->dfuds,father->maxNodes/4);
-    father->nNodes-=zeros;
-    father->shrink2();
-
-
     //todo:delete leftovers
 
 
 }
 
+//todo:borrar esta variable
+bool stop=false;
 
 bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth){
     //in the first part we insert nodes in the stack, so first we fill path stack
@@ -1614,6 +1598,7 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
         curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
         //if the child function returned a treeNode with a -1, that means that the path does not exist. so we break here.
         if (curNodeAux.first == (NODE_TYPE)-1) {
+            stop=true;
             printf("baaaaad\n");
             //reset the indexes
             delTreeNodeIndex=0;
