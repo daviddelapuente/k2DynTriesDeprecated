@@ -1705,6 +1705,12 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
                 if(i>0 && (actualBlock->nNodes+delBlockStack[i-1]->nNodes)<=beta){
                     //todo: aqui llamar a la funcion que une bloques
                     unionBlocks(delBlockStack[i-1],actualBlock, ((blockPtr*)delBlockStack[i-1]->ptr)[flagPathBlockStack[i-1]].flag , flagPathBlockStack[i-1]);
+                    i--;
+                }
+
+                while(i>0 && (delBlockStack[i]->nNodes+delBlockStack[i-1]->nNodes)<=beta){
+                    unionBlocks(delBlockStack[i-1],delBlockStack[i],((blockPtr*)delBlockStack[i-1]->ptr)[flagPathBlockStack[i-1]].flag , flagPathBlockStack[i-1]);
+                    i--;
                 }
 
                 return false;
