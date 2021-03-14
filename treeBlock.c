@@ -70,22 +70,8 @@ void treeBlock::shrink(uint16_t deletedNodes){
 }
 
 
-
-
-
-//todo: ver si el 4096 se puede generalizar
-//all of these sizes are 4096, becouse are the maximum number of subtrees a block can have
-//array of subtree info
-nodeInfo stackSS[4096];
-//this array contains all the subtrees
-subtreeInfo subtrees[4096];
-//array of deepth of every subtree
-uint16_t depthVector[4096];
-
-//todo: elimine selectSubtree
-
 //return a treeNode where the subtree begin (the end is in subTreeSize)
-treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, uint16_t & depthSelectN){
+treeNode treeBlock::selectSubtree2(treeGenoma* g,uint16_t maxDepth, uint16_t & subTreeSize, uint16_t & depthSelectN){
 
     // depth is the depth of the root of the block
     uint16_t depth= rootDepth + 1;
@@ -100,8 +86,8 @@ treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, ui
     //init the index of the 3 arrays (stackSS,subtrees,depthVector)
     uint16_t ssTop=0, subtreeTop = 0, depthTop = 0;
     //the first node preorder is 0 and the number of children is a number between 0 and 4 and is given by the table nChildernT and de cNodeCod codification
-    stackSS[ssTop].preorder = 0;
-    stackSS[ssTop++].nChildren =  nChildrenT[cNodeCod];
+    g->stackSS[ssTop].preorder = 0;
+    g->stackSS[ssTop++].nChildren =  nChildrenT[cNodeCod];
 
     //this will keep a finger on the frontier
     if (nPtrs == 0 || curFlag >= nPtrs){
@@ -128,35 +114,35 @@ treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, ui
             }
 
             //substract 1 from the childrens that are not visited yet in the node (this is stackSS[sstop-1])
-            --stackSS[ssTop-1].nChildren;
+            --g->stackSS[ssTop-1].nChildren;
 
         //if we are not a fronteir node (and still we dont pass the max Depth)
         }else if (depth < maxDepth) {
             //in this part we fill the nodeInfo i
             //fill the preorder of the nodeInfo
-            stackSS[ssTop].preorder = i;
+            g->stackSS[ssTop].preorder = i;
             //get the node code
             cNodeCod = (dfuds[i>>2]>>shiftT[i & 0x3]) & 0x000f;
             //fill the childrens of the node info, and then sstop++
-            stackSS[ssTop++].nChildren = nChildrenT[cNodeCod];
+            g->stackSS[ssTop++].nChildren = nChildrenT[cNodeCod];
             depth++;
         }else {
             //we only actualize that we visited this node and continue with the next
-            --stackSS[ssTop-1].nChildren;
+            --g->stackSS[ssTop-1].nChildren;
         }
 
         //now we fill the subtrees info
         //this ssTop~i so this is O(n^2)
         //todo: necesito mas orientacion de como se hace esto :(
-        while (ssTop > 0 && stackSS[ssTop-1].nChildren == 0) {
-            subtrees[subtreeTop].preorder = stackSS[ssTop-1].preorder;
-            subtrees[subtreeTop++].subtreeSize = i-stackSS[ssTop-1].preorder+1;
+        while (ssTop > 0 && g->stackSS[ssTop-1].nChildren == 0) {
+            g->subtrees[subtreeTop].preorder = g->stackSS[ssTop-1].preorder;
+            g->subtrees[subtreeTop++].subtreeSize = i-g->stackSS[ssTop-1].preorder+1;
             --ssTop;
-            depthVector[depthTop++] = --depth;
+            g->depthVector[depthTop++] = --depth;
             if (ssTop == 0) {
                 break;
             }else {
-                stackSS[ssTop-1].nChildren--;
+                g->stackSS[ssTop-1].nChildren--;
             }
         }
     }
@@ -168,8 +154,8 @@ treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, ui
     for (uint16_t i = 0; i < subtreeTop; ++i) {
         //of all the subtrees we will prefer the ones that it sizes is between 25% and 75% of the actual block.
         //and from all of those, we will prefer the left most (in preorder)
-        if (((float)nNodes/4) <= subtrees[i].subtreeSize && subtrees[i].subtreeSize <= ((float)3*nNodes/4) && subtrees[i].preorder < leftmost) {
-            leftmost = nodemin = subtrees[i].preorder;
+        if (((float)nNodes/4) <= g->subtrees[i].subtreeSize && g->subtrees[i].subtreeSize <= ((float)3*nNodes/4) && g->subtrees[i].preorder < leftmost) {
+            leftmost = nodemin = g->subtrees[i].preorder;
             posmin = i;
         }
     }
@@ -179,19 +165,19 @@ treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, ui
     //and the new subtree is the one that minimize nNodes-2*subtreeSize.
     if (leftmost == MAX_UINT_16) {
         int16_t diff;
-        nodemin = subtrees[0].preorder,
-        min = nNodes - subtrees[0].subtreeSize - subtrees[0].subtreeSize,
+        nodemin = g->subtrees[0].preorder,
+        min = nNodes - g->subtrees[0].subtreeSize - g->subtrees[0].subtreeSize,
         posmin = 0;
 
         for (uint16_t i = 1; i < subtreeTop; ++i) {
-            diff = nNodes - 2*subtrees[i].subtreeSize;
+            diff = nNodes - 2*g->subtrees[i].subtreeSize;
             if (diff < 0){
                 diff = -diff;
             }
        
             if (diff < min) {
                 min = diff;
-                nodemin = subtrees[i].preorder;
+                nodemin = g->subtrees[i].preorder;
                 posmin = i;
             }
         }
@@ -199,15 +185,12 @@ treeNode treeBlock::selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, ui
 
 
     //actualize the subTreesize and its depth
-    subTreeSize = subtrees[posmin].subtreeSize;
-    depthSelectN = depthVector[posmin];
+    subTreeSize = g->subtrees[posmin].subtreeSize;
+    depthSelectN = g->depthVector[posmin];
 
     //return the tuple in function of nodemin
     return treeNode(nodemin >> 2,nodemin & 0x3);
 }
-
-//dumyroot=tuple 0,0
-treeNode dummyRootBlockNode(0,0);
 
 void babToBin(uint16_t a){
     uint16_t n=a;
@@ -230,15 +213,12 @@ void babToBin(uint16_t a){
 }
 
 
-//todo: que hace?
-void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth, uint16_t curFlag){
+void treeBlock::insert(treeGenoma*g,treeNode node, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth, uint16_t curFlag){
 
-    //todo: talvez podemos sacarlo de aqui y ponerlo en los ifs que si aparece?
     treeNode nodeAux = node;
 
     //first we determine the max size of the blocks depending on the deepth
     if (rootDepth < L1) {
-        //todo: esto se puede eliminar? pq los nodos bajo L1 no son blockes
         //shorters nodes are at the begining
         Nt = S1;
     }else if (rootDepth <= L2) {
@@ -257,7 +237,6 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
         //get the codification of the node we want to insert
         uint8_t cNodeCod = (dfuds[node.first]>>shiftT[node.second]) & 0x000f;
 
-        //todo:porque un register?
         /*the idea of aux is to shiftleft a 16bit to mask our node.
         for example if we have xxxx xxxx 1101 xxxx, node.second is = 2 (the x means that value is a 0 or 1, we only mind about node.second)
         so if we have the 16bit mask = 0xF = 0000 0000 0000 1111, we will want to shift it 4 times to left
@@ -273,7 +252,8 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
         dfuds[node.first] = dfuds[node.first] | (insertT[cNodeCod][str[0]] << aux);
 
         //we insert the str in the corresponding child block, using dummyRootBlockNode <0,0> for codification
-        ((blockPtr *)ptr)[curFlag].P->insert(dummyRootBlockNode, str, length, level, maxDepth, 0);
+        treeNode dummyRootBlockNode(0,0);
+        ((blockPtr *)ptr)[curFlag].P->insert(g,dummyRootBlockNode, str, length, level, maxDepth, 0);
         return;
 
 
@@ -306,7 +286,7 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
         --length;
         /*then we move the pointer node to the its child position with str[0] (this is where the new descendants will be inserted)
         this node will represent the first node we will move (the first node of the right half, or in our example this node is d)*/
-        node = skipChildrenSubtree(node, str[0], level, maxDepth, curFlag);
+        node = skipChildrenSubtree(g,node, str[0], level, maxDepth, curFlag);
 
 
         //we create some auxiliar nodes that will help with the insertion, this node will be used to move the nodes in the right half
@@ -390,20 +370,16 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
             // we grow it
             grow(length-1);
             // After growing, recursively inserts the node
-            insert(node, str, length, level, maxDepth, curFlag);
+            insert(g,node, str, length, level, maxDepth, curFlag);
 
 
         }else {
 
             //this part will consist in spliting the node in a child block
-
-
-
-            //todo:revisar si lo que dije aca es cierto
             //calculate the subtree (the node were beging the subtree is stored in originalSelectedNode and selectedNode. And the end of the subtree is stored in subTreeSize)
             treeNode selectedNode, originalSelectedNode;
             uint16_t subTreeSize, depthSelectedNode;
-            originalSelectedNode = selectedNode = selectSubtree2(maxDepth, subTreeSize, depthSelectedNode);
+            originalSelectedNode = selectedNode = selectSubtree2(g,maxDepth, subTreeSize, depthSelectedNode);
 
             //now we will copy the subtree in a new block
 
@@ -426,7 +402,6 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
             blockPtr *new_ptr;
             if (nPtrs > 0) {
                 //first we make with equal size than blockPtr (then we will adjust this)
-                //todo: ver si lo que dije aqui arriba es cieto
                 new_ptr = (blockPtr *)malloc(sizeof(blockPtr)*nPtrs);
             }else {
                 new_ptr = NULL;
@@ -474,7 +449,6 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
                 }
 
                 //we are copying a frontier node
-                //todo: que hay en ptr[flag].flag?
                 if (ptr!=NULL && flag < nPtrs && preorderSelectedNode == ((blockPtr *)ptr)[flag].flag) {
                     //copy the pointer for the new block
                     new_ptr[auxFlag].P = ((blockPtr *)ptr)[flag].P;
@@ -495,7 +469,6 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
                 //use the destNode to index the new_dfuds and copy the node that is indexed by selectedNode in dfuds
                 new_dfuds[destNode.first] = new_dfuds[destNode.first] | (((dfuds[selectedNode.first] >> aux) & 0x000F) << 4*(3-destNode.second));
 
-                //todo: me tinca que esto borra los nodos qe estan en dfuds, que estan en el subtree. pero hay que verlo con calma
                 if (selectedNode != originalSelectedNode){
                     dfuds[selectedNode.first] =  dfuds[selectedNode.first] & ~(0xF << aux);
                 }
@@ -514,14 +487,12 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
 
             /* we want to know if the insertion will be before the selected subtree. [before,subtree,after]
              at first we will asume that the insertion will be before*/
-            //todo: me imagino qe es before U subtree
             bool insertionBeforeSelectedTree = true;
 
 
             /*if insertionInNewBlock is false that means that the insertion is in before or in after [before,       ,after]
             in the other hand. we know that flag lives in subtree [before, flag  ,after], if flag <=curFlag, but insertion isnt in new block
             that means that curFlag must be in after*/
-            //todo:que es curFlag? me imagino que es como un indice qe lleva la cuenta de en qe frontera estamos
             if (!insertionInNewBlock && flag <= curFlag){
                 //the insertion point is after the selected subtree
                 insertionBeforeSelectedTree = false;
@@ -530,7 +501,7 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
             //now we instantiate the new block
             treeBlock *new_block = (treeBlock *)malloc(sizeof(treeBlock));
             new_block->nNodes = subTreeSize;
-            //todo: estaba este comentario: OJO con este valor, definir bien
+
             new_block->maxNodes = sizeArray[subTreeSize];
             new_block->dfuds = new_dfuds;
             new_block->rootDepth = depthSelectedNode;
@@ -572,7 +543,6 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
                 new_block->nPtrs = auxFlag;
 
                 //add the new child block to the current block ptr array
-                //todo: ver si borramos los demas nodos de ptr
                 ((blockPtr *)ptr)[flagSelectedNode].flag = absolutePosition(originalSelectedNode);
                 ((blockPtr *)ptr)[flagSelectedNode].P = new_block;
 
@@ -628,7 +598,7 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
 
 
             //now we shrink the actual block. considering the number of nodes we remove (subTreeSize)
-            //todo: -length?
+
             if (subTreeSize > length) {
                 shrink(subTreeSize - 1 - length + 1);
             }else {
@@ -651,14 +621,14 @@ void treeBlock::insert(treeNode node, uint8_t str[], uint64_t length, uint16_t l
                 //if the insertion is in the root of the new block
                 if (isInRoot) {
                     //we insert in the actual block but with the promise that then the node will be inserted in a frontier node (the new block we created) check the first if statement
-                    insert(insertionNode, str, length, level, maxDepth, curFlag);
+                    insert(g,insertionNode, str, length, level, maxDepth, curFlag);
                 }else{
                     //if the node is not inserted in the root, the we insert in the new block
-                    new_block->insert(insertionNode, str, length, level, maxDepth, curFlagNewBlock);
+                    new_block->insert(g,insertionNode, str, length, level, maxDepth, curFlagNewBlock);
                 }
             }else{
                 // insertion continues in the original block
-                insert(insertionNode, str, length, level, maxDepth, curFlag);
+                insert(g,insertionNode, str, length, level, maxDepth, curFlag);
             }
 
         }
@@ -674,11 +644,9 @@ treeBlock *treeBlock::getPointer(uint16_t curFlag){
     return ((blockPtr *)ptr)[curFlag].P;
 }
 
-//todo: qe hace ?
-int8_t stack[100];
 
 //takes me to the position in dfuds, where is the child of the node with symbol (this function is a wrapper of skipChildrenSubtree but identificate when a child is in the block or in a child block)
-treeNode treeBlock::skipChildrenSubtree(treeNode &node, uint8_t symbol, uint16_t &curLevel,uint16_t maxLevel, uint16_t &curFlag){
+treeNode treeBlock::skipChildrenSubtree(treeGenoma*g,treeNode &node, uint8_t symbol, uint16_t &curLevel,uint16_t maxLevel, uint16_t &curFlag){
 
     //cant skip childs if you are at the max level
     if (curLevel == maxLevel){
@@ -718,12 +686,12 @@ treeNode treeBlock::skipChildrenSubtree(treeNode &node, uint8_t symbol, uint16_t
 
     //this two lines are like stack[0]=nChildrens
     int16_t sTop = -1;
-    stack[++sTop] = nChildren;
+    g->stack[++sTop] = nChildren;
     //diference between the number of childrens and the skiped childrens
     uint8_t diff = nChildren - skipChild;
 
     //we traverse the tree in preorder
-    while(curPreorder < nNodes && sTop >= 0 && diff < stack[0])  {
+    while(curPreorder < nNodes && sTop >= 0 && diff < g->stack[0])  {
 
         //we are at a fronteir node
         if (curPreorder == nextFlag) {
@@ -735,29 +703,28 @@ treeNode treeBlock::skipChildrenSubtree(treeNode &node, uint8_t symbol, uint16_t
                 nextFlag = ((blockPtr *)ptr)[curFlag].flag;
             }
             //we substrac 1 from the current top, because this node is checked and its childrens are in another block
-            --stack[sTop];
+            --g->stack[sTop];
         }else if (curLevel < maxLevel) {
             //we are not in a fronteir node
             //calculate the code of the next node, using its preorder number on dfuds
             cNodeCod = (dfuds[curPreorder >> 2]>>shiftT[curPreorder & 0x3]) & 0x000f;
             //at the number of childrens of the current node, to the stack
-            stack[++sTop] = nChildrenT[cNodeCod];
+            g->stack[++sTop] = nChildrenT[cNodeCod];
             //go down in the tree
             ++curLevel;
         }else {
-            //todo: esto ocurre realmente?
-            --stack[sTop];
+            --g->stack[sTop];
         }
 
         //go to next node
         ++curPreorder;
 
         //this will set stop to thee previus node in preorder (is like going back)
-        while (sTop >= 0 && stack[sTop] == 0) {
+        while (sTop >= 0 && g->stack[sTop] == 0) {
             --sTop;
             --curLevel;
             if (sTop >= 0){
-                --stack[sTop];
+                --g->stack[sTop];
             }
         }
 
@@ -769,23 +736,19 @@ treeNode treeBlock::skipChildrenSubtree(treeNode &node, uint8_t symbol, uint16_t
 }
 
 
-
-//null node
-treeNode NULL_NODE = treeNode((NODE_TYPE)-1, 0);
-//return the next child in function of the symbol
-int changedBlock=0;
-treeNode treeBlock::child(treeBlock *&p, treeNode & node, uint8_t symbol, uint16_t &curLevel, uint16_t maxLevel,uint16_t &curFlag){
+treeNode treeBlock::child(treeGenoma*g,treeBlock *&p, treeNode & node, uint8_t symbol, uint16_t &curLevel, uint16_t maxLevel,uint16_t &curFlag){
 
     //get codification of current node
     uint8_t cNodeCod = (dfuds[node.first]>>shiftT[node.second]) & 0x000f;
     //the rank of the node
     uint8_t soughtChild = (uint8_t) childT[cNodeCod][symbol];
+
     //if the rank is -1, it has now childrens in that position so we return a null node
-    if (soughtChild == (uint8_t)-1){
-        return NULL_NODE;
+    if (soughtChild == (uint8_t)-1)
+    {
+        return treeNode((NODE_TYPE)-1, 0);
     }
     //if we are in a max level, we return the same node
-    //todo: pq lo anterior? esto pasa?
     if (curLevel == maxLevel && soughtChild != (uint8_t)-1) {
         return node;
     }
@@ -794,7 +757,7 @@ treeNode treeBlock::child(treeBlock *&p, treeNode & node, uint8_t symbol, uint16
     treeNode currNode;
     //if we are a fronteir node
     if (ptr != NULL && curFlag < nPtrs && absolutePosition(node) == ((blockPtr *)ptr)[curFlag].flag) {
-        changedBlock=1;
+        g->changedBlock=1;
         //get the fronteir pointer
         p = ((blockPtr *)ptr)[curFlag].P;
 
@@ -804,11 +767,11 @@ treeNode treeBlock::child(treeBlock *&p, treeNode & node, uint8_t symbol, uint16
         auxNode.first = auxNode.second = 0;
 
         //we search the child in the block of the fronteir node
-        currNode = p->skipChildrenSubtree(auxNode, symbol, curLevel, maxLevel, curFlag);
+        currNode = p->skipChildrenSubtree(g,auxNode, symbol, curLevel, maxLevel, curFlag);
     }    
     else{
         //if we are not a fronteir node, we search the child in this block
-        currNode = skipChildrenSubtree(node, symbol, curLevel, maxLevel, curFlag);
+        currNode = skipChildrenSubtree(g,node, symbol, curLevel, maxLevel, curFlag);
     }
     return currNode;
 }
@@ -818,7 +781,7 @@ treeNode treeBlock::child(treeBlock *&p, treeNode & node, uint8_t symbol, uint16
 /*this function consume the string that represent the morton code, until the path it represent finished
 finally call a function that insert the new path in a block*/
 //todo: consideraria cambiarle el nombre a esta funcion, y a las demas inserts
-void insertar(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, uint16_t maxDepth){
+void insertar(treeGenoma*g,treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, uint16_t maxDepth){
 
     //curBlock is pointing to the root because we will start in that point. curBlockAux is a pointer we will use to decend the tree
     treeBlock *curBlock = root, *curBlockAux;
@@ -833,8 +796,7 @@ void insertar(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, ui
 
         //we get the child using the morton code char (str[i])
         curBlockAux = curBlock;
-        curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
-
+        curNodeAux = curBlock->child(g,curBlock, curNode, str[i], level, maxDepth, curFlag);
         //if the child function returned a treeNode with a -1, that means that the path does not exist. so we break here.
         if (curNodeAux.first == (NODE_TYPE)-1) {
             break;
@@ -858,13 +820,15 @@ void insertar(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, ui
     the for cycle will stop at some i where the path does not exist
     so we have to inserts str[i..length-1] starting from the current node
     The new nodes inserted will descend from curNode*/
-    curBlock->insert(curNode, &str[i], length-i, level, maxDepth, curFlag);
+
+    curBlock->insert(g,curNode, &str[i], length-i, level, maxDepth, curFlag);
 }
 
 
 
 //this will create and insert the respective nodes in the trie and in the treeBlocks
-void insertTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
+void insertTrie(treeGenoma*g,trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
+
 
     //this will consume the string until a children does not exist.
     //this will leave i as the position in str from where the path does not exist or if the path continue in a treeBlock
@@ -907,7 +871,7 @@ void insertTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
 
     //we call insertar, that will insert the remaining string str[i...length(str)}
     //in treeBlocks
-    insertar(p, &str[i], length-i, i, maxDepth);
+    insertar(g,p, &str[i], length-i, i, maxDepth);
 }
 
 
@@ -915,7 +879,7 @@ void insertTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
 
 
 //return true if the string str is a path in a block
-bool isEdge(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, uint16_t maxDepth){
+bool isEdge(treeGenoma*g,treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, uint16_t maxDepth){
 
     //curBlock is pointing to the root because we will start in that point. curBlockAux is a pointer we will use to decend the tree
     treeBlock *curBlock = root, *curBlockAux;
@@ -929,7 +893,7 @@ bool isEdge(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, uint
     for (i = 0; i < length; ++i) {
         //we will get the child in function of the simbol str[i}
         curBlockAux = curBlock;
-        curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
+        curNodeAux = curBlock->child(g,curBlock, curNode, str[i], level, maxDepth, curFlag);
 
         //if the child is a -1, that means that the path does not exist, so we break
         if (curNodeAux.first == (NODE_TYPE)-1){
@@ -957,7 +921,7 @@ bool isEdge(treeBlock *root, uint8_t *str, uint64_t length, uint16_t level, uint
 
 //todo: consideraria cambiarle el nombre
 //return true if the path represented with the str, is in the trie (and in the tree)
-bool isEdgeTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth) {
+bool isEdgeTrie(treeGenoma*g,trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth) {
 
     //this will consume the string until a children does not exist.
     //this will leave i as the position in str from where the path does not exist or if the path continue in a treeBlock
@@ -970,7 +934,7 @@ bool isEdgeTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth) {
     isEdge to continue searching in the blocks)*/
     treeBlock *p= (treeBlock *) t->block;
     if (p) {
-        return isEdge(p, &str[i], length - i, i, maxDepth);
+        return isEdge(g,p, &str[i], length - i, i, maxDepth);
     } else {
         return false;
     }
@@ -980,15 +944,10 @@ bool isEdgeTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth) {
 
 
 
-//tnumber of blocks and number of nodes
-uint64_t totalBlocks = 0, totalNodes = 0;
-
 //this function calculate the size of the whole tree
-uint64_t treeBlock::size(){
+uint64_t treeBlock::size(treeGenoma*g){
 
     //for each block we increment the number of blocks and sum its nodes
-    totalBlocks++;
-    totalNodes += nNodes;
 
     //calculate the size of the block
     uint64_t totalSize = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t *) + sizeof(blockPtr *) + sizeof(uint16_t) + nPtrs*(sizeof(treeBlock *) + sizeof(uint16_t));
@@ -996,8 +955,7 @@ uint64_t treeBlock::size(){
 
     //for each fronteir node, calculate each size
     for(uint16_t i = 0; i < nPtrs; ++i) {
-        //todo: cambiar el nombre de ptr a algo mas relacionado con la frontera
-        totalSize += ((blockPtr *) ptr)[i].P->size();
+        totalSize += ((blockPtr *) ptr)[i].P->size(g);
     }
     //return the total size
     return totalSize;
@@ -1005,7 +963,7 @@ uint64_t treeBlock::size(){
 
 
 //return the size of the whole trie
-uint64_t sizeTrie(trieNode *t){
+uint64_t sizeTrie(treeGenoma* g,trieNode *t){
 
     //base case: if the pointer is null return 0
     if (!t) {
@@ -1020,13 +978,13 @@ uint64_t sizeTrie(trieNode *t){
     //if we are not a treeBlock
     if (!t->block) {
         //we sum the the size of the children tries
-        totalSize += sizeTrie(t->children[0]);
-        totalSize += sizeTrie(t->children[1]);
-        totalSize += sizeTrie(t->children[2]);
-        totalSize += sizeTrie(t->children[3]);
+        totalSize += sizeTrie(g,t->children[0]);
+        totalSize += sizeTrie(g,t->children[1]);
+        totalSize += sizeTrie(g,t->children[2]);
+        totalSize += sizeTrie(g,t->children[3]);
     }else{
         //if we are a treeBlock, we sum the size of the treeBlock
-  	    totalSize += ((treeBlock *)t->block)->size();
+  	    totalSize += ((treeBlock *)t->block)->size(g);
   	}
     //return the total sum
   	return totalSize;
@@ -1086,8 +1044,6 @@ void printDfuds2(uint16_t *A,int n){
     printf("\n");
 }
 
-
-uint16_t table[4] = {0x0fff, 0xf0ff, 0xff0f, 0xfff0};
 
 void deleteZeros(uint16_t * A,int n){
     int zeroIndex = 0;
@@ -1165,20 +1121,8 @@ void treeBlock::shrink2(){
     }
 }
 
-//stack of treeNodes
-treeNode delTreeNodeStack[4096];
-uint8_t delTreePathStack[4096];
-int delTreeNodeIndex=0;
 
-//how many nodes of the path are in the block
-uint8_t nodesInBlockStack[4096];
-uint8_t flagPathBlockStack[4096];
-
-//stack of treeBlock
-treeBlock* delBlockStack[4096];
-int delBlockNodeIndex=0;
-
-bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth){
+bool deleteBlockNodes(treeGenoma*g,treeBlock *root, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth){
     //in the first part we insert nodes in the stack, so first we fill path stack
     //curBlock is pointing to the root because we will start in that point. curBlockAux is a pointer we will use to decend the tree
     treeBlock *curBlock = root, *curBlockAux;
@@ -1187,63 +1131,67 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
     //dummy flag
     uint16_t curFlag = 0;
     //set the first block and node in the respective stacks
-    delTreeNodeStack[delTreeNodeIndex]=curNode;
-    delBlockStack[delBlockNodeIndex]=curBlock;
-    nodesInBlockStack[delBlockNodeIndex]=1;
+    g->delBlockNodeIndex=0;
+
+    g->delTreeNodeStack[g->delTreeNodeIndex]=curNode;
+    g->delBlockStack[g->delBlockNodeIndex]=curBlock;
+    g->nodesInBlockStack[g->delBlockNodeIndex]=1;
+
     //if we descend from one block to another, this flag will store the position of the second block in the first block
     uint16_t lastFlag;
 
     //traverse the string (the path) until we reach the final node or we dont find a path
     uint64_t i;
+    g->changedBlock=false;
     for (i = 0; i < length; ++i) {
         //put the char in the char stack
-        delTreePathStack[delTreeNodeIndex]=str[i];
+        g->delTreePathStack[g->delTreeNodeIndex]=str[i];
         //if we descend in a block, we want to store the last flag before it change
         lastFlag=curFlag;
         //we get the child using the morton code char (str[i])
-        curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
+        curNodeAux = curBlock->child(g,curBlock, curNode, str[i], level, maxDepth, curFlag);
         //if the child function returned a treeNode with a -1, that means that the path does not exist. so we break here.
         if (curNodeAux.first == (NODE_TYPE)-1) {
             //reset the indexes
             printf("baaaaaaaaaaaaaaaaad\n");
-            delTreeNodeIndex=0;
-            delBlockNodeIndex=0;
+            g->delTreeNodeIndex=0;
+            g->delBlockNodeIndex=0;
             return false;
         }
 
         //we update the curNode
         curNode = curNodeAux;
         //if the block didnt changed
-        if(changedBlock==0){
-            delTreeNodeIndex++;
-            delTreeNodeStack[delTreeNodeIndex]=curNode;
-            nodesInBlockStack[delBlockNodeIndex]++;
+        if(g->changedBlock==0){
+            g->delTreeNodeIndex++;
+            g->delTreeNodeStack[g->delTreeNodeIndex]=curNode;
+            g->nodesInBlockStack[g->delBlockNodeIndex]++;
         }else{
             //if the block changed (that means we are in a frontier)
-            changedBlock=0;
+            g->changedBlock=0;
 
-            flagPathBlockStack[delBlockNodeIndex]=lastFlag;
-            delBlockNodeIndex++;
-            delBlockStack[delBlockNodeIndex]=curBlock;
+            g->flagPathBlockStack[g->delBlockNodeIndex]=lastFlag;
+            g->delBlockNodeIndex++;
+            g->delBlockStack[g->delBlockNodeIndex]=curBlock;
 
-            delTreeNodeIndex++;
-            delTreeNodeStack[delTreeNodeIndex]=dummyNode;
-            delTreePathStack[delTreeNodeIndex]=str[i];
+            g->delTreeNodeIndex++;
+            g->delTreeNodeStack[g->delTreeNodeIndex]=dummyNode;
+            g->delTreePathStack[g->delTreeNodeIndex]=str[i];
 
-            delTreeNodeIndex++;
-            delTreeNodeStack[delTreeNodeIndex]=curNode;
-            nodesInBlockStack[delBlockNodeIndex]=2;
+            g->delTreeNodeIndex++;
+            g->delTreeNodeStack[g->delTreeNodeIndex]=curNode;
+            g->nodesInBlockStack[g->delBlockNodeIndex]=2;
         }
     }
     //substract one int the delTreeStackIndex because the last for cycle add an extra one
-    nodesInBlockStack[delBlockNodeIndex]--;
-    delTreeNodeIndex--;
+    g->nodesInBlockStack[g->delBlockNodeIndex]--;
+    g->delTreeNodeIndex--;
 
     //now we traverse the stack backward deleting the nodes till a path fork
     //this variable will tell us if we need to delete the last block traversed
     bool deleteBlock=false;
     //first iter for each block in the stack delBlockStack
-    for(int i=delBlockNodeIndex;i>=0;i--){
+    for(int i=g->delBlockNodeIndex;i>=0;i--){
 
         treeBlock *actualBlock;
         if (deleteBlock){
@@ -1251,26 +1199,26 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
             deleteBlock=false;
             actualBlock->freeTreeBlock();
             actualBlock=NULL;
-            actualBlock=delBlockStack[i];
+            actualBlock=g->delBlockStack[i];
             actualBlock->nPtrs--;
             if(actualBlock->nPtrs==0){
                 actualBlock->ptr=NULL;
             }else{
-                for(uint16_t k=flagPathBlockStack[i];k<actualBlock->nPtrs;k++){
+                for(uint16_t k=g->flagPathBlockStack[i];k<actualBlock->nPtrs;k++){
                     ((blockPtr*)actualBlock->ptr)[k]= ((blockPtr *)actualBlock->ptr)[k+1];
                 }
                 actualBlock->ptr = realloc(actualBlock->ptr, sizeof(blockPtr)*(actualBlock->nPtrs));
             }
         }else{
-            actualBlock=delBlockStack[i];
+            actualBlock=g->delBlockStack[i];
         }
 
         //we iter for each node in each block
-        for(int j=0;j<nodesInBlockStack[i];j++){
+        for(int j=0;j<g->nodesInBlockStack[i];j++){
             //get the actual char in the path (from bottom to top, dont forget it)
-            uint8_t actualChar=delTreePathStack[delTreeNodeIndex];
+            uint8_t actualChar=g->delTreePathStack[g->delTreeNodeIndex];
             //get the actual node in the path
-            treeNode actualNode=delTreeNodeStack[delTreeNodeIndex];
+            treeNode actualNode=g->delTreeNodeStack[g->delTreeNodeIndex];
             //now we delete the node in the block
             uint16_t auxFirst=actualBlock->dfuds[actualNode.first];
             auxFirst=auxFirst & delNodeInBlockT[actualNode.second][actualChar];
@@ -1291,13 +1239,13 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
                 actualBlock->nNodes--;
             }else if(!(actualNode.first==0 && actualNode.second==0 && j>=0)){
                 //if auxFirst !=0 that means that the path was forked so we return false
-                delTreeNodeIndex=0;
-                delBlockNodeIndex=0;
+                g->delTreeNodeIndex=0;
+                g->delBlockNodeIndex=0;
                 deleteZeros(actualBlock->dfuds,actualBlock->maxNodes/4);
                 actualBlock->shrink2();
                 return false;
             }
-            delTreeNodeIndex--;
+            g->delTreeNodeIndex--;
         }
         deleteZeros(actualBlock->dfuds,actualBlock->maxNodes/4);
 
@@ -1309,8 +1257,8 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
         }
     }
 
-    delTreeNodeIndex=0;
-    delBlockNodeIndex=0;
+    g->delTreeNodeIndex=0;
+    g->delBlockNodeIndex=0;
     return true;
 }
 
@@ -1324,39 +1272,32 @@ bool deleteBlockNodes(treeBlock *root, uint8_t str[], uint64_t length, uint16_t 
 
 
 
-//todo: this should be of size L1
-//this stack will contain the first L1 nodes from the path we want to delete
-trieNode* delTrieNodeStack[4096];
-//this stack will contain the step the path take in each node (this means it has numbers from 0 to 3)
-//in other words delPathStack[i] contain the character for the path of node delTrieNodeStack[i] (corresponding to delTrieNodeStack[i+1])
-uint8_t delPathStack[4096];
-//this index will tell us in wich part of the stack we should insert.
-int delTrieNodeIndex=0;
+
 
 /*this will delete the path of the edge
  first we insert the trie nodes on the stack. and trigger deleteBlockNodes that will delete
  the nodes in a bottom up strategy*/
-void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
-
+void deleteTrie(treeGenoma*g,trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
     //insert t in the stack
-    delTrieNodeStack[delTrieNodeIndex]=t;
-
+    g->delTrieNodeIndex=0;
+    g->delTrieNodeStack[g->delTrieNodeIndex]=t;
     //this will consume the string inserting the nodes of the path in the stack
     //if a node does not exist, that means that the path does not exist so we return
     uint64_t i ;
     for(i=0;i<L1;i++){
+
         if (t->children[str[i]]){
             //add the char to the char stack
-            delPathStack[delTrieNodeIndex]=str[i];
+            g->delPathStack[g->delTrieNodeIndex]=str[i];
             //we actualize delTrieNodeIndex because there is an offset of 1 between delPathStack and delTrieNodeStack
-            delTrieNodeIndex++;
+            g->delTrieNodeIndex++;
             //add the trieNode to the stack
-            delTrieNodeStack[delTrieNodeIndex]=t->children[str[i]];
+            g->delTrieNodeStack[g->delTrieNodeIndex]=t->children[str[i]];
             //go to next node
             t=t->children[str[i]];
         }else{
             //the path does not exist, so there is nothing to delete
-            delTrieNodeIndex=0;
+            g->delTrieNodeIndex=0;
             return;
         }
     }
@@ -1365,7 +1306,7 @@ void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
     treeBlock *p;
     if (t->block == NULL) {
         //the path does not exist, so there is nothing to delete
-        delTrieNodeIndex=0;
+        g->delTrieNodeIndex=0;
         return;
     }else{
         //if the block exist, we assign it to p
@@ -1373,12 +1314,12 @@ void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
     }
 
     //we call deleteBlockNodes, that delete the remaining path str[i...length(str)] in treeBlocks
-    bool continueDelete=deleteBlockNodes(p, &str[i], length-i, i, maxDepth);
+    bool continueDelete=deleteBlockNodes(g,p, &str[i], length-i, i, maxDepth);
 
     if(continueDelete){
         //if continueDelete is true, that means that we should check the delTrieNodeStack to continue deleting until the path is forked
         //get the last trieNode in the stack
-        trieNode *taux=delTrieNodeStack[delTrieNodeIndex];
+        trieNode *taux=g->delTrieNodeStack[g->delTrieNodeIndex];
 
         //the last trieNode has null childs but not null block, so if continueDelete is true, that means that the block is now null
         treeBlock *paux=(treeBlock *) taux->block;
@@ -1387,20 +1328,20 @@ void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
         taux->block=NULL;
 
         //now go to the next trieNode and delete the last one
-        delTrieNodeIndex--;
-        taux=delTrieNodeStack[delTrieNodeIndex];
+        g->delTrieNodeIndex--;
+        taux=g->delTrieNodeStack[g->delTrieNodeIndex];
 
         //delete all the trieNodes of the stack till the path fork
-        while(delTrieNodeIndex>=0){
+        while(g->delTrieNodeIndex>=0){
             //todo:quizas hay que hacer un free para esa estructura tambien
-            taux->children[delPathStack[delTrieNodeIndex]]=NULL;
+            taux->children[g->delPathStack[g->delTrieNodeIndex]]=NULL;
             //this tell us if the path is not forked
             if( taux->children[0]==NULL && taux->children[1]==NULL && taux->children[2]==NULL && taux->children[3]==NULL ){
-                delTrieNodeIndex--;
-                taux=delTrieNodeStack[delTrieNodeIndex];
+                g->delTrieNodeIndex--;
+                taux=g->delTrieNodeStack[g->delTrieNodeIndex];
             }else{
                 //the path is forked, so we stop
-                delTrieNodeIndex=0;
+                g->delTrieNodeIndex=0;
                 return;
             }
 
@@ -1412,7 +1353,7 @@ void deleteTrie(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
 
     }else{
         //if continueDelete is false, that means that this part of the path is still in use
-        delTrieNodeIndex=0;
+        g->delTrieNodeIndex=0;
         return;
     }
     return;
@@ -1449,7 +1390,7 @@ void deleteZeros3(uint16_t *A,int n){
     }
 }
 
-uint16_t table2[4] = {0xf000, 0x0f00, 0x00f0, 0x000f};
+
 void unionBlocks(treeBlock * father, treeBlock * son,uint16_t flag,uint16_t flagIndex){
     //join dfuds
     //first grow the father
@@ -1569,10 +1510,7 @@ void unionBlocks(treeBlock * father, treeBlock * son,uint16_t flag,uint16_t flag
 
 }
 
-//todo:borrar esta variable
-bool stop=false;
-
-bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth){
+bool deleteBlockNodes2(treeGenoma*g,treeBlock *root, uint8_t str[], uint64_t length, uint16_t level,uint64_t maxDepth){
     //in the first part we insert nodes in the stack, so first we fill path stack
     //curBlock is pointing to the root because we will start in that point. curBlockAux is a pointer we will use to decend the tree
     treeBlock *curBlock = root, *curBlockAux;
@@ -1580,10 +1518,12 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
     treeNode curNode(0,0), curNodeAux,dummyNode(0,0);
     //dummy flag
     uint16_t curFlag = 0;
+    g->delBlockNodeIndex=0;
     //set the first block and node in the respective stacks
-    delTreeNodeStack[delTreeNodeIndex]=curNode;
-    delBlockStack[delBlockNodeIndex]=curBlock;
-    nodesInBlockStack[delBlockNodeIndex]=1;
+    g->delTreeNodeStack[g->delTreeNodeIndex]=curNode;
+    g->delBlockStack[g->delBlockNodeIndex]=curBlock;
+    g->nodesInBlockStack[g->delBlockNodeIndex]=1;
+    g->stop=false;
     //if we descend from one block to another, this flag will store the position of the second block in the first block
     uint16_t lastFlag;
 
@@ -1591,48 +1531,48 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
     uint64_t i;
     for (i = 0; i < length; ++i) {
         //put the char in the char stack
-        delTreePathStack[delTreeNodeIndex]=str[i];
+        g->delTreePathStack[g->delTreeNodeIndex]=str[i];
         //if we descend in a block, we want to store the last flag before it change
         lastFlag=curFlag;
         //we get the child using the morton code char (str[i])
-        curNodeAux = curBlock->child(curBlock, curNode, str[i], level, maxDepth, curFlag);
+        curNodeAux = curBlock->child(g,curBlock, curNode, str[i], level, maxDepth, curFlag);
         //if the child function returned a treeNode with a -1, that means that the path does not exist. so we break here.
         if (curNodeAux.first == (NODE_TYPE)-1) {
-            stop=true;
+            g->stop=true;
             printf("baaaaad\n");
             //reset the indexes
-            delTreeNodeIndex=0;
-            delBlockNodeIndex=0;
+            g->delTreeNodeIndex=0;
+            g->delBlockNodeIndex=0;
             return false;
         }
 
         //we update the curNode
         curNode = curNodeAux;
         //if the block didnt changed
-        if(changedBlock==0){
-            delTreeNodeIndex++;
-            delTreeNodeStack[delTreeNodeIndex]=curNode;
-            nodesInBlockStack[delBlockNodeIndex]++;
+        if(g->changedBlock==0){
+            g->delTreeNodeIndex++;
+            g->delTreeNodeStack[g->delTreeNodeIndex]=curNode;
+            g->nodesInBlockStack[g->delBlockNodeIndex]++;
         }else{
             //if the block changed (that means we are in a frontier)
-            changedBlock=0;
+            g->changedBlock=0;
 
-            flagPathBlockStack[delBlockNodeIndex]=lastFlag;
-            delBlockNodeIndex++;
-            delBlockStack[delBlockNodeIndex]=curBlock;
+            g->flagPathBlockStack[g->delBlockNodeIndex]=lastFlag;
+            g->delBlockNodeIndex++;
+            g->delBlockStack[g->delBlockNodeIndex]=curBlock;
 
-            delTreeNodeIndex++;
-            delTreeNodeStack[delTreeNodeIndex]=dummyNode;
-            delTreePathStack[delTreeNodeIndex]=str[i];
+            g->delTreeNodeIndex++;
+            g->delTreeNodeStack[g->delTreeNodeIndex]=dummyNode;
+            g->delTreePathStack[g->delTreeNodeIndex]=str[i];
 
-            delTreeNodeIndex++;
-            delTreeNodeStack[delTreeNodeIndex]=curNode;
-            nodesInBlockStack[delBlockNodeIndex]=2;
+            g->delTreeNodeIndex++;
+            g->delTreeNodeStack[g->delTreeNodeIndex]=curNode;
+            g->nodesInBlockStack[g->delBlockNodeIndex]=2;
         }
     }
     //substract one int the delTreeStackIndex because the last for cycle add an extra one
-    nodesInBlockStack[delBlockNodeIndex]--;
-    delTreeNodeIndex--;
+    g->nodesInBlockStack[g->delBlockNodeIndex]--;
+    g->delTreeNodeIndex--;
 
 
 
@@ -1643,7 +1583,7 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
     bool unionBlock=false;
     uint16_t beta=64;
     //first iter for each block in the stack delBlockStack
-    for(int i=delBlockNodeIndex;i>=0;i--){
+    for(int i=g->delBlockNodeIndex;i>=0;i--){
 
         treeBlock *actualBlock;
         if (deleteBlock){
@@ -1651,13 +1591,13 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
             deleteBlock=false;
             actualBlock->freeTreeBlock();
             actualBlock=NULL;
-            actualBlock=delBlockStack[i];
+            actualBlock=g->delBlockStack[i];
 
             actualBlock->nPtrs--;
             if(actualBlock->nPtrs==0){
                 actualBlock->ptr=NULL;
             }else{
-                for(uint16_t k=flagPathBlockStack[i];k<actualBlock->nPtrs;k++){
+                for(uint16_t k=g->flagPathBlockStack[i];k<actualBlock->nPtrs;k++){
                     ((blockPtr*)actualBlock->ptr)[k]= ((blockPtr *)actualBlock->ptr)[k+1];
                 }
                 actualBlock->ptr = realloc(actualBlock->ptr, sizeof(blockPtr)*(actualBlock->nPtrs));
@@ -1668,16 +1608,16 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
         }else if(unionBlock){
             unionBlock=false;
         }else{
-            actualBlock=delBlockStack[i];
+            actualBlock=g->delBlockStack[i];
         }
 
 
         //we iter for each node in each block
-        for(int j=0;j<nodesInBlockStack[i];j++){
+        for(int j=0;j<g->nodesInBlockStack[i];j++){
             //get the actual char in the path (from bottom to top, dont forget it)
-            uint8_t actualChar=delTreePathStack[delTreeNodeIndex];
+            uint8_t actualChar=g->delTreePathStack[g->delTreeNodeIndex];
             //get the actual node in the path
-            treeNode actualNode=delTreeNodeStack[delTreeNodeIndex];
+            treeNode actualNode=g->delTreeNodeStack[g->delTreeNodeIndex];
             //now we delete the node in the block
             uint16_t auxFirst=actualBlock->dfuds[actualNode.first];
             auxFirst=auxFirst & delNodeInBlockT[actualNode.second][actualChar];
@@ -1698,24 +1638,24 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
                 actualBlock->nNodes--;
             }else if(!(actualNode.first==0 && actualNode.second==0 && j>=0)){
                 //if auxFirst !=0 that means that the path was forked so we return false
-                delTreeNodeIndex=0;
-                delBlockNodeIndex=0;
+                g->delTreeNodeIndex=0;
+                g->delBlockNodeIndex=0;
                 deleteZeros(actualBlock->dfuds,actualBlock->maxNodes/4);
                 actualBlock->shrink2();
-                if(i>0 && (actualBlock->nNodes+delBlockStack[i-1]->nNodes)<=beta){
+                if(i>0 && (actualBlock->nNodes+g->delBlockStack[i-1]->nNodes)<=beta){
                     //todo: aqui llamar a la funcion que une bloques
-                    unionBlocks(delBlockStack[i-1],actualBlock, ((blockPtr*)delBlockStack[i-1]->ptr)[flagPathBlockStack[i-1]].flag , flagPathBlockStack[i-1]);
+                    unionBlocks(g->delBlockStack[i-1],actualBlock, ((blockPtr*)g->delBlockStack[i-1]->ptr)[g->flagPathBlockStack[i-1]].flag , g->flagPathBlockStack[i-1]);
                     i--;
                 }
 
-                while(i>0 && (delBlockStack[i]->nNodes+delBlockStack[i-1]->nNodes)<=beta){
-                    unionBlocks(delBlockStack[i-1],delBlockStack[i],((blockPtr*)delBlockStack[i-1]->ptr)[flagPathBlockStack[i-1]].flag , flagPathBlockStack[i-1]);
+                while(i>0 && (g->delBlockStack[i]->nNodes+g->delBlockStack[i-1]->nNodes)<=beta){
+                    unionBlocks(g->delBlockStack[i-1],g->delBlockStack[i],((blockPtr*)g->delBlockStack[i-1]->ptr)[g->flagPathBlockStack[i-1]].flag , g->flagPathBlockStack[i-1]);
                     i--;
                 }
 
                 return false;
             }
-            delTreeNodeIndex--;
+            g->delTreeNodeIndex--;
         }
 
         deleteZeros(actualBlock->dfuds,actualBlock->maxNodes/4);
@@ -1724,20 +1664,25 @@ bool deleteBlockNodes2(treeBlock *root, uint8_t str[], uint64_t length, uint16_t
         if(actualBlock->nNodes==0){
             //is time to delete the block
             deleteBlock=true;
+        }else{
+            if(i>0 && (actualBlock->nNodes+g->delBlockStack[i-1]->nNodes)<=beta){
+                unionBlocks(g->delBlockStack[i-1],actualBlock, ((blockPtr*)g->delBlockStack[i-1]->ptr)[g->flagPathBlockStack[i-1]].flag , g->flagPathBlockStack[i-1]);
+            }
         }
     }
 
-    delTreeNodeIndex=0;
-    delBlockNodeIndex=0;
+    g->delTreeNodeIndex=0;
+    g->delBlockNodeIndex=0;
     return true;
 }
 
 
 
-void deleteTrie2(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
+void deleteTrie2(treeGenoma* g,trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
 
     //insert t in the stack
-    delTrieNodeStack[delTrieNodeIndex]=t;
+    g->delTrieNodeIndex=0;
+    g->delTrieNodeStack[g->delTrieNodeIndex]=t;
 
     //this will consume the string inserting the nodes of the path in the stack
     //if a node does not exist, that means that the path does not exist so we return
@@ -1745,16 +1690,16 @@ void deleteTrie2(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
     for(i=0;i<L1;i++){
         if (t->children[str[i]]){
             //add the char to the char stack
-            delPathStack[delTrieNodeIndex]=str[i];
+            g->delPathStack[g->delTrieNodeIndex]=str[i];
             //we actualize delTrieNodeIndex because there is an offset of 1 between delPathStack and delTrieNodeStack
-            delTrieNodeIndex++;
+            g->delTrieNodeIndex++;
             //add the trieNode to the stack
-            delTrieNodeStack[delTrieNodeIndex]=t->children[str[i]];
+            g->delTrieNodeStack[g->delTrieNodeIndex]=t->children[str[i]];
             //go to next node
             t=t->children[str[i]];
         }else{
             //the path does not exist, so there is nothing to delete
-            delTrieNodeIndex=0;
+            g->delTrieNodeIndex=0;
             return;
         }
     }
@@ -1763,7 +1708,7 @@ void deleteTrie2(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
     treeBlock *p;
     if (t->block == NULL) {
         //the path does not exist, so there is nothing to delete
-        delTrieNodeIndex=0;
+        g->delTrieNodeIndex=0;
         return;
     }else{
         //if the block exist, we assign it to p
@@ -1771,12 +1716,12 @@ void deleteTrie2(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
     }
 
     //we call deleteBlockNodes, that delete the remaining path str[i...length(str)] in treeBlocks
-    bool continueDelete=deleteBlockNodes2(p, &str[i], length-i, i, maxDepth);
+    bool continueDelete=deleteBlockNodes2(g,p, &str[i], length-i, i, maxDepth);
 
     if(continueDelete){
         //if continueDelete is true, that means that we should check the delTrieNodeStack to continue deleting until the path is forked
         //get the last trieNode in the stack
-        trieNode *taux=delTrieNodeStack[delTrieNodeIndex];
+        trieNode *taux=g->delTrieNodeStack[g->delTrieNodeIndex];
 
         //the last trieNode has null childs but not null block, so if continueDelete is true, that means that the block is now null
         treeBlock *paux=(treeBlock *) taux->block;
@@ -1785,20 +1730,20 @@ void deleteTrie2(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
         taux->block=NULL;
 
         //now go to the next trieNode and delete the last one
-        delTrieNodeIndex--;
-        taux=delTrieNodeStack[delTrieNodeIndex];
+        g->delTrieNodeIndex--;
+        taux=g->delTrieNodeStack[g->delTrieNodeIndex];
 
         //delete all the trieNodes of the stack till the path fork
-        while(delTrieNodeIndex>=0){
+        while(g->delTrieNodeIndex>=0){
             //todo:quizas hay que hacer un free para esa estructura tambien
-            taux->children[delPathStack[delTrieNodeIndex]]=NULL;
+            taux->children[g->delPathStack[g->delTrieNodeIndex]]=NULL;
             //this tell us if the path is not forked
             if( taux->children[0]==NULL && taux->children[1]==NULL && taux->children[2]==NULL && taux->children[3]==NULL ){
-                delTrieNodeIndex--;
-                taux=delTrieNodeStack[delTrieNodeIndex];
+                g->delTrieNodeIndex--;
+                taux=g->delTrieNodeStack[g->delTrieNodeIndex];
             }else{
                 //the path is forked, so we stop
-                delTrieNodeIndex=0;
+                g->delTrieNodeIndex=0;
                 return;
             }
 
@@ -1810,7 +1755,7 @@ void deleteTrie2(trieNode *t, uint8_t *str, uint64_t length, uint16_t maxDepth){
 
     }else{
         //if continueDelete is false, that means that this part of the path is still in use
-        delTrieNodeIndex=0;
+        g->delTrieNodeIndex=0;
         return;
     }
     return;

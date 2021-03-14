@@ -18,7 +18,7 @@ int main()
     trieNode *t = (trieNode *) malloc(sizeof(trieNode));
     t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
     t->block = NULL;
-
+    treeGenoma *g=(treeGenoma*) malloc(sizeof(treeGenoma));
     bool found;
 
     //scan int code
@@ -94,7 +94,7 @@ int main()
 
         //for each edge, we sum the time it cost to insert
         start = clock();
-        insertTrie(t, str, 23, 22);
+        insertTrie(g,t, str, 23, 22);
         diff += clock() - start;
 
 
@@ -146,10 +146,10 @@ int main()
 
         //for each edge, we sum the time it cost to insert
         start2 = clock();
-        deleteTrie2(t, str, 23, 22);
+        deleteTrie2(g,t, str, 23, 22);
         diff2 += clock() - start2;
 
-        if(stop){
+        if(g->stop){
             printf("%lu\n",i);
             break;
         }

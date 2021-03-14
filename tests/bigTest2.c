@@ -18,6 +18,7 @@ int main()
     trieNode *t = (trieNode *) malloc(sizeof(trieNode));
     t->children[0] = t->children[1] = t->children[2] = t->children[3] = NULL;
     t->block = NULL;
+    treeGenoma *g=(treeGenoma*) malloc(sizeof(treeGenoma));
 
     bool found;
 
@@ -95,14 +96,14 @@ int main()
         //for each edge, we sum the time it cost to insert
         start = clock();
         //t=trieNode, str=mortonCode, length of str=23, maxdepth of the tree=22
-        insertTrie(t, str, 23, 22);
+        insertTrie(g,t, str, 23, 22);
         diff += clock() - start;
 
 
 
 
         start2 = clock();
-        found = isEdgeTrie(t, str, 23, 22);
+        found = isEdgeTrie(g,t, str, 23, 22);
         diff2 += clock() - start2;
 
         //we print each 1000000 edges
@@ -115,7 +116,7 @@ int main()
             printf("     insertTime=%f\n",(float)msec/i);
             fprintf(fpinsert,"%f,\n",(float)msec/i);
 
-            uint64_t treeSize = sizeTrie(t);
+            uint64_t treeSize = sizeTrie(g,t);
             printf("     Total size= %lu bytes\n", treeSize);
             fprintf(fpsize,"%lu,\n",treeSize);
 
@@ -134,7 +135,7 @@ int main()
     printf("     insertTime=%f\n",(float)msec/nEdges);
     fprintf(fpinsert,"%f\n",(float)msec/nEdges);
 
-    uint64_t treeSize = sizeTrie(t);
+    uint64_t treeSize = sizeTrie(g,t);
     printf("     Total size= %lu bytes\n", treeSize);
     fprintf(fpsize,"%lu\n",treeSize);
 

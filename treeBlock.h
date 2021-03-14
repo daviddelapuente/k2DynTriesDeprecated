@@ -57,62 +57,11 @@ struct trieNode{
 
 //A node within a block represented as a pair <index of the short int that contains the node, offset of the node within the short int>. The offset is 0, 1, 2, or 3
 typedef std::pair <NODE_TYPE,OFFSET_TYPE> treeNode;
-
+typedef struct treeGenoma t_treeGenoma;
 //function that returns the the absolute position of a node in the block.
 //this absolute position is calculated first geting the NODE_TYPE, and then we have 4 consecutives posibilities
 //and we use the OFFSET_TYPE to choose one.
 uint16_t absolutePosition(treeNode &node);
-
-
-
-
-//this is the main structure. the more important attributes are:
-//dfuds: is the bit array containing the topology
-//ptr: is the array of pointers to the child blocks (the frontier)
-struct treeBlock
- {
-    //attributes
-    uint8_t rootDepth;  // depth of the root of the block
-    uint16_t nNodes;  // number of nodes in the tree block
-    uint16_t maxNodes; // maximum number of nodes in the block. Also, it is the size of the next array.
-    uint16_t *dfuds;  // DFUDS of the tree block
-    void /*blockPTR*/ *ptr;    // Pointers to child blocks (this is a pointer to a data structure containing the pointer to the block (please read  blockPtr below))
-    uint16_t nPtrs;   // number of pointers to child blocks
-
-    //methods
-    //inserts in a block
-    void insert(treeNode, uint8_t[], uint64_t, uint16_t, uint64_t, uint16_t);
-    //takes me to the position in dfuds, where is the child of the node with symbol
-    treeNode skipChildrenSubtree(treeNode &, uint8_t, uint16_t &, uint16_t, uint16_t &);
-    //return the next child in function of the symbol (this function is a wrapper of skipChildrenSubtree but identificate when a child is in the block or in a child block)
-    treeNode child(treeBlock *&, treeNode &, uint8_t, uint16_t &, uint16_t, uint16_t &);
-    // grow the dfuds and update maxNodes
-    void grow(uint16_t extraNodes);
-    // shrink dfuds and update maxNodes
-    void shrink(uint16_t deletedNodes);
-    void shrink2();
-    //return a treeNode where the subtree begin (the end is in subTreeSize)
-    treeNode selectSubtree2(uint16_t maxDepth, uint16_t & subTreeSize, uint16_t & depthSelectN);
-    //return the pointer to a treeBlock pointer, in function of the current flag (fronteir node)
-    struct treeBlock *getPointer(uint16_t);
-    //this function calculate the size of the whole tree
-    uint64_t size();
-
-    //free the data structure
-    void freeTreeBlock();
-    void freeTreeBlock2();
-    ~treeBlock(){;};
- };
- 
-//this is a wrapper that contain the treeBlock pointer, but also contain a flag.
-//this flag is the pre order of the node in the block.
-typedef struct
- {
-    uint16_t flag;   // node that owns the pointer to child block
-    treeBlock *P;
- } blockPtr;
-
-
 
 
 
@@ -146,6 +95,109 @@ struct subtreeInfo{
     };
 };
 
+
+//this is the main structure. the more important attributes are:
+//dfuds: is the bit array containing the topology
+//ptr: is the array of pointers to the child blocks (the frontier)
+struct treeBlock
+ {
+    //attributes
+    uint8_t rootDepth;  // depth of the root of the block
+    uint16_t nNodes;  // number of nodes in the tree block
+    uint16_t maxNodes; // maximum number of nodes in the block. Also, it is the size of the next array.
+    uint16_t *dfuds;  // DFUDS of the tree block
+    void /*blockPTR*/ *ptr;    // Pointers to child blocks (this is a pointer to a data structure containing the pointer to the block (please read  blockPtr below))
+    uint16_t nPtrs;   // number of pointers to child blocks
+
+    //methods
+    //inserts in a block
+    void insert(treeGenoma*g,treeNode, uint8_t[], uint64_t, uint16_t, uint64_t, uint16_t);
+    //takes me to the position in dfuds, where is the child of the node with symbol
+    treeNode skipChildrenSubtree(treeGenoma*g,treeNode &, uint8_t, uint16_t &, uint16_t, uint16_t &);
+    //return the next child in function of the symbol (this function is a wrapper of skipChildrenSubtree but identificate when a child is in the block or in a child block)
+    treeNode child(treeGenoma*g,treeBlock *&, treeNode &, uint8_t, uint16_t &, uint16_t, uint16_t &);
+    // grow the dfuds and update maxNodes
+    void grow(uint16_t extraNodes);
+    // shrink dfuds and update maxNodes
+    void shrink(uint16_t deletedNodes);
+    void shrink2();
+    //return a treeNode where the subtree begin (the end is in subTreeSize)
+    treeNode selectSubtree2(treeGenoma*g,uint16_t maxDepth, uint16_t & subTreeSize, uint16_t & depthSelectN);
+    //return the pointer to a treeBlock pointer, in function of the current flag (fronteir node)
+    struct treeBlock *getPointer(uint16_t);
+    //this function calculate the size of the whole tree
+    uint64_t size(treeGenoma* g);
+
+    //free the data structure
+    void freeTreeBlock();
+    void freeTreeBlock2();
+    ~treeBlock(){;};
+ };
+
+
+
+
+
+//this is a wrapper that contain the treeBlock pointer, but also contain a flag.
+//this flag is the pre order of the node in the block.
+typedef struct
+ {
+    uint16_t flag;   // node that owns the pointer to child block
+    treeBlock *P;
+ } blockPtr;
+
+
+
+
+
+//this is a wrapper for the global vars that use the trieblock and treeblock, so if you have
+//more two tries (or more than one), operations in trie1 wont affect glabal variables in trie2
+typedef struct treeGenoma{
+    //todo: ver si el 4096 se puede generalizar
+    //all of these sizes are 4096, becouse are the maximum number of subtrees a block can have
+    //array of subtree info
+    nodeInfo stackSS[4096];
+    //this array contains all the subtrees
+    subtreeInfo subtrees[4096];
+    //array of deepth of every subtree
+    uint16_t depthVector[4096];
+
+
+    int8_t stack[100];
+
+
+    //return the next child in function of the symbol
+    int changedBlock;
+
+
+    //variables for deleting
+    //stack of treeNodes
+    treeNode delTreeNodeStack[4096];
+    uint8_t delTreePathStack[4096];
+    int delTreeNodeIndex;
+
+    //how many nodes of the path are in the block
+    uint8_t nodesInBlockStack[4096];
+    uint8_t flagPathBlockStack[4096];
+
+    //stack of treeBlock
+    treeBlock* delBlockStack[4096];
+    int delBlockNodeIndex;
+
+    //todo: this should be of size 2*L1
+    //this stack will contain the first L1 nodes from the path we want to delete
+    trieNode* delTrieNodeStack[4096];
+    //this stack will contain the step the path take in each node (this means it has numbers from 0 to 3)
+    //in other words delPathStack[i] contain the character for the path of node delTrieNodeStack[i] (corresponding to delTrieNodeStack[i+1])
+    uint8_t delPathStack[4096];
+    //this index will tell us in wich part of the stack we should insert.
+    int delTrieNodeIndex;
+
+    //variables for debugging
+    //todo:borrar esta variable
+    bool stop;
+
+}treeGenoma;
 
 
 
@@ -296,5 +348,7 @@ const int8_t childRankT[16][4] = {
 const uint16_t delete0Table1[4] = {0x0000,0xf000,0xff00,0xfff0};
 const uint16_t delete0Table2[4] = {0x0fff,0x00ff,0x000f,0x0000};
 
+uint16_t table[4] = {0x0fff, 0xf0ff, 0xff0f, 0xfff0};
+uint16_t table2[4] = {0xf000, 0x0f00, 0x00f0, 0x000f};
 
 #endif
